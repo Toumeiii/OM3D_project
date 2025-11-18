@@ -444,36 +444,62 @@ int main(int argc, char** argv) {
         // Draw everything
         {
             PROFILE_GPU("Frame");
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
+
+            /*
+            {
+                PROFILE_GPU("Z-prepass");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Z-prepass");
+
+
+                renderer.main_framebuffer.bind(true, false);
+                scene->render();
+
+                glPopDebugGroup();  // Z-prepass
+            }
+            */
 
             // Render the scene
             {
                 PROFILE_GPU("Main pass");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main pass");
 
                 renderer.main_framebuffer.bind(true, true);
                 scene->render();
+
+                glPopDebugGroup();  // Main pass
             }
 
             // Apply a tonemap as a full screen pass
             {
                 PROFILE_GPU("Tonemap");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Tonemap");
 
                 renderer.tone_map_framebuffer.bind(false, true);
                 tonemap_program->bind();
                 tonemap_program->set_uniform(HASH("exposure"), exposure);
                 renderer.lit_hdr_texture.bind(0);
                 draw_full_screen_triangle();
+
+                glPopDebugGroup();  // Tonemap
             }
 
             // Blit tonemap result to screen
             {
                 PROFILE_GPU("Blit");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Blit");
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 renderer.tone_map_framebuffer.blit();
+
+                glPopDebugGroup();  // Blit
             }
 
             // Draw GUI on top
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "GUI");
             gui(*imgui);
+            glPopDebugGroup();  // GUI
+            glPopDebugGroup();  // Frame
         }
 
         glfwSwapBuffers(window);
