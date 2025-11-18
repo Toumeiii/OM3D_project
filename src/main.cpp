@@ -446,7 +446,6 @@ int main(int argc, char** argv) {
             PROFILE_GPU("Frame");
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
 
-            /*
             {
                 PROFILE_GPU("Z-prepass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Z-prepass");
@@ -457,14 +456,13 @@ int main(int argc, char** argv) {
 
                 glPopDebugGroup();  // Z-prepass
             }
-            */
 
             // Render the scene
             {
                 PROFILE_GPU("Main pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main pass");
 
-                renderer.main_framebuffer.bind(true, true);
+                renderer.main_framebuffer.bind(false, true);
                 scene->render();
 
                 glPopDebugGroup();  // Main pass
