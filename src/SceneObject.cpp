@@ -13,7 +13,7 @@ void SceneObject::render(const bool depth) const {
     if(!_material || !_mesh) {
         return;
     }
-
+    _material->set_depth_test_mode(depth ? DepthTestMode::Equal : DepthTestMode::Standard);
     _material->set_uniform(HASH("model"), transform());
     _material->bind(depth);
     _mesh->draw();
