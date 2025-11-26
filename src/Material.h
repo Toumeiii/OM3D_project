@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+#include "PassType.h"
+
 namespace OM3D {
 
 enum class BlendMode {
@@ -43,7 +45,7 @@ class Material {
             _program->set_uniform(FWD(args)...);
         }
 
-        void bind(bool depth=false) const;
+        void bind(PassType pass_type=PassType::MAIN) const;
 
         static Material textured_pbr_material(bool alpha_test = false);
 

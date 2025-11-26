@@ -1,6 +1,6 @@
 #include "SceneObject.h"
 
-#include <glm/gtc/matrix_transform.hpp>
+#include "PassType.h"
 
 namespace OM3D {
 
@@ -9,13 +9,13 @@ SceneObject::SceneObject(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<Mater
     _material(std::move(material)) {
 }
 
-void SceneObject::render(const bool depth) const {
+void SceneObject::render(const PassType pass_type) const {
     if(!_material || !_mesh) {
         return;
     }
-    _material->set_depth_test_mode(depth ? DepthTestMode::Equal : DepthTestMode::Standard);
+    _material->set_depth_test_mode(pass_type == PassType::DEPTH ? DepthTestMode::Equal : DepthTestMode::Standard);
     _material->set_uniform(HASH("model"), transform());
-    _material->bind(depth);
+    _material->bind(pass_type);
     _mesh->draw();
 }
 

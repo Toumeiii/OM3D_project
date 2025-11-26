@@ -376,9 +376,11 @@ struct RendererState {
             state.depth_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp);
             state.lit_hdr_texture = Texture(size, ImageFormat::RGBA16_FLOAT, WrapMode::Clamp);
             state.tone_mapped_texture = Texture(size, ImageFormat::RGBA8_UNORM, WrapMode::Clamp);
+            state.shadow_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp, true);
             state.main_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture});
             state.tone_map_framebuffer = Framebuffer(nullptr, std::array{&state.tone_mapped_texture});
             state.depth_framebuffer = Framebuffer(&state.depth_texture);
+            state.shadow_framebuffer = Framebuffer(&state.shadow_texture);
         }
 
         return state;
@@ -389,10 +391,12 @@ struct RendererState {
     Texture depth_texture;
     Texture lit_hdr_texture;
     Texture tone_mapped_texture;
+    Texture shadow_texture;
 
     Framebuffer main_framebuffer;
     Framebuffer tone_map_framebuffer;
     Framebuffer depth_framebuffer;
+    Framebuffer shadow_framebuffer;
 };
 
 
@@ -462,9 +466,19 @@ int main(int argc, char** argv) {
 
 
                 renderer.depth_framebuffer.bind(true, false);
-                scene->render(Scene::DEPTH);
+                scene->render(PassType::DEPTH);
 
                 glPopDebugGroup();  // Z-prepass
+            }
+
+            {
+                PROFILE_GPU("Shadow Pass");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Pass");
+
+                renderer.shadow_framebuffer.bind(true, false);
+                scene->render(PassType::SHADOW);
+
+                glPopDebugGroup();  // Shadow Pass
             }
 
             // Render the scene
@@ -472,8 +486,10 @@ int main(int argc, char** argv) {
                 PROFILE_GPU("Main pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main pass");
 
+                // renderer.shadow_texture.bind(6);
+
                 renderer.main_framebuffer.bind(false, true);
-                scene->render();
+                scene->render(PassType::MAIN);
 
                 glPopDebugGroup();  // Main pass
             }

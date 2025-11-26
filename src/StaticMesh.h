@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include "BoundingSphere.h"
 #include "Camera.h"
 
 namespace OM3D {
@@ -13,11 +14,6 @@ namespace OM3D {
 struct MeshData {
     std::vector<Vertex> vertices;
     std::vector<u32> indices;
-};
-
-struct BoundingSphere {
-    glm::vec3 origin;
-    float radius;
 };
 
 class StaticMesh : NonCopyable {
@@ -31,6 +27,7 @@ class StaticMesh : NonCopyable {
 
         void draw() const;
         bool collide(const Frustum& cam_frustum, const glm::vec3& cam_position) const;
+        BoundingSphere get_bounding_sphere() const;
 
     private:
         BoundingSphere _bounding_sphere;

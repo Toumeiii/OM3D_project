@@ -38,6 +38,8 @@ namespace OM3D {
 
     bool StaticMesh::collide(const Frustum& cam_frustum, const glm::vec3& cam_position) const
     {
+        if (_bounding_sphere.radius <= 0.f)
+            return false;
         const auto c = _bounding_sphere.origin - cam_position;
         auto in_plane = [&](const glm::vec3& n) {
             return glm::dot(glm::normalize(n), c) > -_bounding_sphere.radius;
@@ -50,7 +52,11 @@ namespace OM3D {
             && in_plane(cam_frustum._bottom_normal);
     }
 
-void StaticMesh::draw() const {
+    BoundingSphere StaticMesh::get_bounding_sphere() const {
+        return _bounding_sphere;
+    }
+
+    void StaticMesh::draw() const {
     _vertex_buffer.bind(BufferUsage::Attribute);
     _index_buffer.bind(BufferUsage::Index);
 

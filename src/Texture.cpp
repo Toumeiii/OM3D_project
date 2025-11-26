@@ -57,7 +57,7 @@ Texture::Texture(const TextureData& data) :
     }
 }
 
-Texture::Texture(const glm::uvec2 &size, ImageFormat format, WrapMode wrap) :
+Texture::Texture(const glm::uvec2 &size, ImageFormat format, WrapMode wrap, bool compare_mode) :
     _handle(create_texture_handle(GL_TEXTURE_2D)),
     _size(size),
     _format(format),
@@ -70,6 +70,10 @@ Texture::Texture(const glm::uvec2 &size, ImageFormat format, WrapMode wrap) :
     glTextureParameteri(_handle.get(), GL_TEXTURE_WRAP_R, gl_wrap);
     glTextureParameteri(_handle.get(), GL_TEXTURE_WRAP_S, gl_wrap);
     glTextureParameteri(_handle.get(), GL_TEXTURE_WRAP_T, gl_wrap);
+    if (compare_mode) {
+        glTextureParameteri(_handle.get(), GL_TEXTURE_COMPARE_MODE , GL_COMPARE_REF_TO_TEXTURE);
+        glTextureParameteri(_handle.get(), GL_TEXTURE_COMPARE_FUNC , GL_LESS);
+    }
 
     if(bindless_enabled()) {
         _bindless = glGetTextureHandleARB(_handle.get());
