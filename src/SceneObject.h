@@ -8,7 +8,7 @@
 
 #include <glm/matrix.hpp>
 
-#include "PassType.hh"
+#include "PassType.h"
 
 namespace OM3D {
 

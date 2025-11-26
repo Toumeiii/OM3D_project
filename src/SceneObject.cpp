@@ -1,8 +1,6 @@
 #include "SceneObject.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "PassType.hh"
+#include "PassType.h"
 
 namespace OM3D {
 

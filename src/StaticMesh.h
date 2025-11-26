@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include "BoundingSphere.hh"
+#include "BoundingSphere.h"
 #include "Camera.h"
 
 namespace OM3D {

@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-#include "PassType.hh"
+#include "PassType.h"
 
 namespace OM3D {
 

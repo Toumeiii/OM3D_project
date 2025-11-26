@@ -367,7 +367,7 @@ struct RendererState {
         if(state.size.x > 0 && state.size.y > 0) {
             state.depth_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp);
             state.lit_hdr_texture = Texture(size, ImageFormat::RGBA16_FLOAT, WrapMode::Clamp);
-            state.shadow_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp);
+            state.shadow_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp, true);
             state.main_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture});
             state.depth_framebuffer = Framebuffer(&state.depth_texture);
             state.shadow_framebuffer = Framebuffer(&state.shadow_texture);
@@ -473,6 +473,8 @@ int main(int argc, char** argv) {
             {
                 PROFILE_GPU("Main pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main pass");
+
+                // renderer.shadow_texture.bind(6);
 
                 renderer.main_framebuffer.bind(false, true);
                 scene->render(PassType::MAIN);

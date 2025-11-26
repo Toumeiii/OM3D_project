@@ -8,7 +8,7 @@
 #include <vector>
 #include <memory>
 
-#include "PassType.hh"
+#include "PassType.h"
 
 namespace OM3D {
 
@@ -29,6 +29,8 @@ class Scene : NonMovable {
 
         Camera& camera();
         const Camera& camera() const;
+
+        Camera get_sun_camera(std::vector<const SceneObject*> *visible_objects = nullptr) const;
 
         void set_envmap(std::shared_ptr<Texture> env);
         void set_sun(float altitude, float azimuth, glm::vec3 color = glm::vec3(1.0f));

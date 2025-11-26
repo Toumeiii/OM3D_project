@@ -4,8 +4,6 @@
 
 #include <algorithm>
 
-#include "PassType.hh"
-
 namespace OM3D {
 
 Material::Material() {
