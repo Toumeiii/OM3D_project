@@ -91,7 +91,7 @@ Camera Scene::get_sun_camera(std::vector<const SceneObject*> *visible_objects) c
     if (to_delete) delete visible_objects;
     auto cam = Camera();
 
-    cam.set_view(Camera::orthographic(
+    cam.set_proj(Camera::orthographic(
         -bounding_sphere.radius,
         bounding_sphere.radius,
         -bounding_sphere.radius,
@@ -100,7 +100,7 @@ Camera Scene::get_sun_camera(std::vector<const SceneObject*> *visible_objects) c
         bounding_sphere.radius * 2
         ));
 
-    cam.set_proj(glm::lookAt(
+    cam.set_view(glm::lookAt(
         bounding_sphere.origin + glm::normalize(_sun_direction) * bounding_sphere.radius,
         bounding_sphere.origin,
         glm::vec3(0, 1, 0)
@@ -136,27 +136,27 @@ void Scene::render(const PassType pass_type) const {
         buffer.bind(BufferUsage::Uniform, 0);
     }
 
-    // Fill and bind lights buffer
-    TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
-    {
-        auto mapping = light_buffer.map(AccessType::WriteOnly);
-        for(size_t i = 0; i != _point_lights.size(); ++i) {
-            const auto& light = _point_lights[i];
-            mapping[i] = {
-                light.position(),
-                light.radius(),
-                light.color(),
-                0.0f
-            };
-        }
-    }
-    light_buffer.bind(BufferUsage::Storage, 1);
-
-    // Bind envmap
-    DEBUG_ASSERT(_envmap && !_envmap->is_null());
-    _envmap->bind(4);
-
     if (pass_type == PassType::MAIN) {
+        // Fill and bind lights buffer
+        TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
+        {
+            auto mapping = light_buffer.map(AccessType::WriteOnly);
+            for(size_t i = 0; i != _point_lights.size(); ++i) {
+                const auto& light = _point_lights[i];
+                mapping[i] = {
+                    light.position(),
+                    light.radius(),
+                    light.color(),
+                    0.0f
+                };
+            }
+        }
+        light_buffer.bind(BufferUsage::Storage, 1);
+
+        // Bind envmap
+        DEBUG_ASSERT(_envmap && !_envmap->is_null());
+        _envmap->bind(4);
+
         // Bind brdf lut needed for lighting to scene rendering shaders
         brdf_lut().bind(5);
 
