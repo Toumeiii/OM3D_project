@@ -65,6 +65,8 @@ class Scene : NonMovable {
 
         void render_main(PassType pass_type) const;
 
+        void render_deferred(PassType pass_type) const;
+
         void render_depth(PassType pass_type) const;
 
         void render_shadow(PassType pass_type) const;

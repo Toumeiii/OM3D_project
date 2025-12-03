@@ -219,6 +219,20 @@ void Scene::render_main(const PassType pass_type) const {
     }
     glPopDebugGroup(); // Transparents
 }
+
+void Scene::render_deferred(const PassType pass_type) const {
+    TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+    set_frame_buffer(buffer);
+
+    auto [opaques, _] = get_opaque_transparent(_camera);
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Opaques");
+    for(const SceneObject& obj : opaques) {
+        obj.render(pass_type);
+    }
+    glPopDebugGroup(); // Opaques
+}
+
 void Scene::render_depth(const PassType pass_type) const {
     TypedBuffer<shader::FrameData> buffer(nullptr, 1);
 
@@ -257,8 +271,8 @@ void Scene::render(const PassType pass_type) const {
         case PassType::SHADOW:
             render_shadow(pass_type);
             break;
-        default:
-            render_main(pass_type);
+        case PassType::DEFFERED:
+            render_deferred(pass_type);
             break;
     }
 }

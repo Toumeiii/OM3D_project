@@ -96,7 +96,7 @@ void Material::bind(const PassType pass_type) const {
             program = _depth_program.get();
             break;
         case PassType::DEFFERED:
-            program = _program.get();
+            program = _deferred_program.get();
             break;
         default:
             break;

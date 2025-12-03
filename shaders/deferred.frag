@@ -46,6 +46,6 @@ void main() {
     const float roughness = metal_rough_tex.g * metal_rough_factor.y; // as per glTF spec
     const float metallic = metal_rough_tex.b * metal_rough_factor.x; // as per glTF spec
 
-    out_albedo_roughness = vec4(vec3(albedo_tex), roughness);
-    out_normal_metalness = vec4(normal, metallic);
+    out_albedo_roughness = vec4(base_color.xyz, roughness);
+    out_normal_metalness = vec4((normalize(normal) + 1.) * 0.5, metallic);
 }
