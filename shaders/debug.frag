@@ -12,7 +12,7 @@ void main() {
     const ivec2 coord = ivec2(gl_FragCoord.xy);
 
     if (state == 0) {       // depth
-        out_color = pow(texelFetch(depth, coord, 0).x, 0.35);
+        out_color = vec4(vec3(pow(texelFetch(depth, coord, 0).x, 0.35)), 1.);
     }
     else if (state == 1) {  // albedo
         out_color = vec4(texelFetch(albedo_roughness, coord, 0).xyz, 1.);
