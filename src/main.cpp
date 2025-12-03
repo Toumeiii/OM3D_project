@@ -376,7 +376,7 @@ struct RendererState {
             state.depth_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp);
             state.lit_hdr_texture = Texture(size, ImageFormat::RGBA16_FLOAT, WrapMode::Clamp);
             state.tone_mapped_texture = Texture(size, ImageFormat::RGBA8_UNORM, WrapMode::Clamp);
-            state.shadow_texture = Texture(size, ImageFormat::Depth32_FLOAT, WrapMode::Clamp, true);
+            state.shadow_texture = Texture(glm::uvec2(2048,2048), ImageFormat::Depth32_FLOAT, WrapMode::Clamp, true);
             state.main_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture});
             state.tone_map_framebuffer = Framebuffer(nullptr, std::array{&state.tone_mapped_texture});
             state.depth_framebuffer = Framebuffer(&state.depth_texture);
@@ -486,7 +486,7 @@ int main(int argc, char** argv) {
                 PROFILE_GPU("Main pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main pass");
 
-                // renderer.shadow_texture.bind(6);
+                renderer.shadow_texture.bind(6);
 
                 renderer.main_framebuffer.bind(false, true);
                 scene->render(PassType::MAIN);
