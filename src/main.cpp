@@ -20,16 +20,18 @@
 using namespace OM3D;
 
 
-static const char* current_state = nullptr;
-
-static const char * states[6] = {
+static constexpr int STATES_SIZE = 7;
+static const char * states[STATES_SIZE] = {
     "None",
     "Depth",
     "Albedo",
     "Normals",
     "Roughness",
     "Metalness",
+    "Sun IBL",
 };
+
+static const char* current_state = states[6];
 
 static float delta_time = 0.0f;
 static float sun_altitude = 45.0f;
@@ -469,6 +471,7 @@ int main(int argc, char** argv) {
 
     auto tonemap_program = Program::from_files("tonemap.frag", "screen.vert");
     auto debug_program = Program::from_files("debug.frag", "screen.vert");
+    auto sun_ibl_program = Program::from_files("sun_ibl.frag", "screen.vert");
     RendererState renderer;
 
     for(;;) {
@@ -571,11 +574,11 @@ int main(int argc, char** argv) {
                 glPopDebugGroup();  // Frame
             }
         }
-        else {
+        else if (current_state != states[6]){
             // Draw everything
             {
                 int state = 0;
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < STATES_SIZE; ++i) {
                     if (current_state == states[i]) {
                         state = i;
                         break;
@@ -625,6 +628,80 @@ int main(int argc, char** argv) {
                 {
                     PROFILE_GPU("Blit");
                     blit_to_screen(renderer.debug_texture);
+                }
+
+                // Draw GUI on top
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "GUI");
+                gui(*imgui);
+                glPopDebugGroup();  // GUI
+                glPopDebugGroup();  // Frame
+            }
+        }
+        else {
+            {
+                PROFILE_GPU("Frame");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
+
+                {
+                    PROFILE_GPU("Z-prepass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Z-prepass");
+
+
+                    renderer.depth_framebuffer.bind(true, false);
+                    scene->render(PassType::DEPTH);
+
+                    glPopDebugGroup();  // Z-prepass
+                }
+
+                /*{
+                    PROFILE_GPU("Shadow Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Pass");
+
+                    renderer.shadow_framebuffer.bind(true, false);
+                    scene->render(PassType::SHADOW);
+
+                    glPopDebugGroup();  // Shadow Pass
+                }*/
+
+                {
+                    PROFILE_GPU("Deferred Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Deferred Pass");
+
+                    renderer.deferred_framebuffer.bind(false, true);
+                    scene->render(PassType::DEFFERED);
+
+                    glPopDebugGroup(); // Deferred Pass
+                }
+
+                // Render the scene
+                {
+                    PROFILE_GPU("Opaque Lighting Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Opaque Lighting Pass");
+
+                    renderer.main_framebuffer.bind(false, true);
+
+                    sun_ibl_program->bind();
+
+                    renderer.depth_texture.bind(0);
+                    renderer.albedo_roughness_texture.bind(1);
+                    renderer.normal_metalness_texture.bind(2);
+                    scene->bind_envmap(3);
+                    brdf_lut().bind(4);
+                    // renderer.shadow_texture.bind(5);
+
+                    TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+                    scene->set_frame_buffer(buffer);
+
+
+                    draw_full_screen_triangle();
+
+                    glPopDebugGroup();  // Opaque Lighting Pass
+                }
+
+                // Blit tonemap result to screen
+                {
+                    PROFILE_GPU("Blit");
+                    blit_to_screen(renderer.tone_mapped_texture);
                 }
 
                 // Draw GUI on top

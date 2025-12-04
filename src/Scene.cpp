@@ -147,11 +147,15 @@ void Scene::set_light() const {
     brdf_lut().bind(5);
 }
 
-void Scene::render_sky() const {
+void Scene::bind_envmap(const int index) const {
     // Bind envmap
     DEBUG_ASSERT(_envmap && !_envmap->is_null());
-    _envmap->bind(4);
+    _envmap->bind(index);
+}
 
+void Scene::render_sky() const {
+
+    bind_envmap(4);
     // Render the sky
     _sky_material.bind();
     _sky_material.set_uniform(HASH("intensity"), _ibl_intensity);

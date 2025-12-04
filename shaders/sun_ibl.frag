@@ -7,30 +7,16 @@ layout(location = 0) out vec4 out_color;
 
 layout(location = 0) in vec2 in_uv;
 
-layout(binding = 0) uniform sampler2D in_texture;
-layout(binding = 1) uniform sampler2D in_normal_texture;
-layout(binding = 2) uniform sampler2D in_metal_rough;
-layout(binding = 3) uniform sampler2D in_emissive;
+layout(binding = 0) uniform sampler2D in_depth;
+layout(binding = 1) uniform sampler2D in_albedo_roughness;
+layout(binding = 2) uniform sampler2D in_normal_metalness;
 
-layout(binding = 4) uniform sampler2D in_depth;
-layout(binding = 5) uniform sampler2D in_albedo_roughness;
-layout(binding = 6) uniform sampler2D in_normal_metalness;
-
-uniform vec3 base_color_factor;
-uniform vec2 metal_rough_factor;
-uniform vec3 emissive_factor;
-uniform float alpha_cutoff;
-
-layout(binding = 4) uniform samplerCube in_envmap;
-layout(binding = 5) uniform sampler2D brdf_lut;
-layout(binding = 6) uniform sampler2DShadow shadow_map;
+layout(binding = 3) uniform samplerCube in_envmap;
+layout(binding = 4) uniform sampler2D brdf_lut;
+// layout(binding = 5) uniform sampler2DShadow shadow_map;
 
 layout(binding = 0) uniform Data {
     FrameData frame;
-};
-
-layout(binding = 1) buffer PointLights {
-    PointLight point_lights[];
 };
 
 void main() {
@@ -48,13 +34,12 @@ void main() {
     const vec3 to_view = (frame.camera.position - position);
     const vec3 view_dir = normalize(to_view);
 
-    vec3 acc = texture(in_emissive, in_uv).rgb * emissive_factor;
-    acc += eval_ibl(in_envmap, brdf_lut, normal, view_dir, base_color, metallic, roughness) * frame.ibl_intensity;
+    vec3 acc = eval_ibl(in_envmap, brdf_lut, normal, view_dir, base_color, metallic, roughness) * frame.ibl_intensity;
     {
-        float shadow = texture(shadow_map, (frame.sun_inv_view_proj * vec4(position, 1.)).xyz, .1);
-        if (shadow > 0.) {
-            acc += shadow * frame.sun_color * eval_brdf(normal, view_dir, frame.sun_dir, base_color, metallic, roughness);
-        }
+        //float shadow = texture(shadow_map, (frame.sun_inv_view_proj * vec4(position, 1.)).xyz, .1);
+        //if (shadow > 0.) {
+            acc += frame.sun_color * eval_brdf(normal, view_dir, frame.sun_dir, base_color, metallic, roughness);
+        //}
     }
 
 
