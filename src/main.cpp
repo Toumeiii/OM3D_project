@@ -22,7 +22,8 @@ using namespace OM3D;
 
 static const char* current_state = nullptr;
 
-static const char * states[5] = {
+static const char * states[6] = {
+    "None",
     "Depth",
     "Albedo",
     "Normals",
@@ -493,7 +494,7 @@ int main(int argc, char** argv) {
         if(const auto& io = ImGui::GetIO(); !io.WantCaptureMouse && !io.WantCaptureKeyboard) {
             process_inputs(window, scene->camera());
         }
-        if (current_state == nullptr) {
+        if (current_state == nullptr || current_state == states[0]) {
             // Draw everything
             {
                 PROFILE_GPU("Frame");
@@ -574,7 +575,7 @@ int main(int argc, char** argv) {
             // Draw everything
             {
                 int state = 0;
-                for (int i = 0; i < 5; ++i) {
+                for (int i = 0; i < 6; ++i) {
                     if (current_state == states[i]) {
                         state = i;
                         break;
