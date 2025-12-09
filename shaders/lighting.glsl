@@ -80,3 +80,21 @@ vec3 eval_ibl(samplerCube envmap, sampler2D brdf_lut, vec3 N, vec3 V, vec3 albed
 
     return kD * diffuse + specular;
 }
+
+float get_shadow(const sampler2DShadow shadow_map, const mat4 sun_view_proj, const vec3 position) {
+    float shadow = 0.;
+    vec4 shadow_pos = sun_view_proj * vec4(position, 1.);
+    shadow_pos.xy = shadow_pos.xy * .5 + .5;
+    if (shadow_pos.x < 0. || shadow_pos.x > 1. || shadow_pos.y < 0. || shadow_pos.y > 1.) {
+        return 1.;
+    }
+    shadow_pos = shadow_pos / shadow_pos.w;
+    shadow_pos.z += length(sun_view_proj[2]) * 1.2;
+    for (int x = -1; x < 2; ++x) {
+        for (int y = -1; y < 2; ++y) {
+            shadow += 1. - texture(shadow_map, shadow_pos.xyz + vec3(vec2(x, y) / textureSize(shadow_map, 0).xy, 0.));
+        }
+    }
+
+    return shadow / 9.;
+}

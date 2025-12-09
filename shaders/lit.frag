@@ -68,19 +68,7 @@ void main() {
     vec3 acc = texture(in_emissive, in_uv).rgb * emissive_factor;
     acc += eval_ibl(in_envmap, brdf_lut, normal, view_dir, base_color, metallic, roughness) * frame.ibl_intensity;
     {
-        float shadow = 0.;
-        vec4 shadow_pos = frame.sun_view_proj * vec4(in_position, 1.);
-        shadow_pos.xy = shadow_pos.xy * .5 + .5;
-        shadow_pos = shadow_pos / shadow_pos.w;
-        shadow_pos.z += length(frame.sun_view_proj[2]) * 1.2;
-        for (int x = -1; x < 2; ++x) {
-            for (int y = -1; y < 2; ++y) {
-                shadow += 1. - texture(shadow_map, shadow_pos.xyz + vec3(vec2(x, y) / textureSize(shadow_map, 0).xy, 0.));
-            }
-        }
-
-        shadow /= 9.;
-
+        float shadow = get_shadow(shadow_map, frame.sun_view_proj, in_position);
         if (shadow > 0.) {
             acc += shadow * frame.sun_color * eval_brdf(normal, view_dir, frame.sun_dir, base_color, metallic, roughness);
         }
