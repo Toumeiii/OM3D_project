@@ -14,6 +14,7 @@ namespace OM3D {
 enum class BlendMode {
     None,
     Alpha,
+    PointLights,
 };
 
 enum class DepthTestMode {
@@ -53,6 +54,7 @@ class Material {
         std::shared_ptr<Program> _program;
         std::shared_ptr<Program> _depth_program;
         std::shared_ptr<Program> _deferred_program;
+        std::shared_ptr<Program> _point_light_program;
         std::vector<std::pair<u32, std::shared_ptr<Texture>>> _textures;
         std::vector<std::pair<u32, UniformValue>> _uniforms;
 

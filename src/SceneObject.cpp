@@ -1,6 +1,7 @@
 #include "SceneObject.h"
 
 #include "PassType.h"
+#include "glm/fwd.hpp"
 
 namespace OM3D {
 
@@ -9,13 +10,21 @@ SceneObject::SceneObject(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<Mater
     _material(std::move(material)) {
 }
 
-void SceneObject::render(const PassType pass_type) const {
+void SceneObject::render(const PassType pass_type, const size_t i) const {
     if(!_material || !_mesh) {
         return;
     }
     switch(pass_type) {
         case PassType::DEPTH:
             _material->set_depth_test_mode(DepthTestMode::Standard);
+            break;
+        case PassType::POINT_LIGHT:
+            _material->set_depth_test_mode(DepthTestMode::None);
+            _material->set_blend_mode(BlendMode::PointLights);
+            _material->set_stored_uniform(HASH("index"), static_cast<glm::u32>(i));
+            break;
+        case PassType::ALPHA_LIGHT:
+            _material->set_depth_test_mode(DepthTestMode::None);
             break;
         default:
             _material->set_depth_test_mode(DepthTestMode::Equal);

@@ -61,6 +61,11 @@ void Material::bind(const PassType pass_type) const {
             glDisable(GL_CULL_FACE);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         break;
+
+        case BlendMode::PointLights:
+            glEnable(GL_BLEND);
+            glDisable(GL_CULL_FACE);
+            glBlendFunc(GL_ONE, GL_ONE);
     }
 
     switch(_depth_test_mode) {
@@ -98,6 +103,9 @@ void Material::bind(const PassType pass_type) const {
         case PassType::DEFFERED:
             program = _deferred_program.get();
             break;
+        case PassType::POINT_LIGHT:
+            program = _point_light_program.get();
+            break;
         default:
             break;
     }
@@ -120,6 +128,7 @@ Material Material::textured_pbr_material(bool alpha_test) {
     material._program = Program::from_files("lit.frag", "basic.vert", defines);
     material._depth_program = Program::from_files("depth.frag", "basic.vert", defines);
     material._deferred_program = Program::from_files("deferred.frag", "basic.vert", defines);
+    material._point_light_program = Program::from_files("point_lights.frag", "basic.vert", defines);
 
     material.set_texture(0u, default_white_texture());
     material.set_texture(1u, default_normal_texture());

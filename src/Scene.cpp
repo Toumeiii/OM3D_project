@@ -1,5 +1,6 @@
 #include "Scene.h"
 
+#include <algorithm>
 #include <TypedBuffer.h>
 
 #include <shader_structs.h>
@@ -23,6 +24,10 @@ void Scene::add_object(SceneObject obj) {
 
 void Scene::add_light(PointLight obj) {
     _point_lights.emplace_back(std::move(obj));
+}
+
+void Scene::add_sphere(const std::shared_ptr<SceneObject> &obj) {
+    _sphere = obj;
 }
 
 Span<const SceneObject> Scene::objects() const {
@@ -198,6 +203,23 @@ std::pair<std::vector<const SceneObject*>, std::vector<const SceneObject*>> Scen
     return std::make_pair(opaque, transparent);
 }
 
+void Scene::render_alpha_lights(const PassType pass_type) const {
+    TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+    TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
+
+    set_frame_buffer(buffer);
+    set_light(light_buffer);
+    bind_envmap();
+
+    auto [_, transparents] = get_opaque_transparent(_camera);
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Transparents");
+    for(const SceneObject* obj : transparents) {
+        obj->render(pass_type);
+    }
+    glPopDebugGroup(); // Transparents
+}
+
 void Scene::render_main(const PassType pass_type) const {
     TypedBuffer<shader::FrameData> buffer(nullptr, 1);
     TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
@@ -288,7 +310,19 @@ void Scene::render_point_lights([[maybe_unused]] const PassType pass_type) const
     set_frame_buffer(frame_data_buffer);
     set_light(point_light_buffer);
 
-    draw_full_screen_triangle(TEXTURE_FUNC_ADD);
+    for (size_t i = 0; i < _point_lights.size(); ++i) {
+        [[maybe_unused]] const BoundingSphere bounding_sphere = {
+            _point_lights[i].position(),
+            _point_lights[i].radius()
+        };
+        const auto sphere = _sphere;
+        auto S = glm::scale(glm::mat4(1.0f), glm::vec3(_point_lights[i].radius()));
+        auto T = glm::translate(glm::mat4(1.0f), glm::vec3(_point_lights[i].position()));
+        sphere->set_transform(T * S);
+        if (bounding_sphere.collide(_camera, sphere->transform())) {
+            sphere->render(pass_type, i);
+        }
+    }
 }
 
 void Scene::render(const PassType pass_type) const {
@@ -311,6 +345,8 @@ void Scene::render(const PassType pass_type) const {
         case PassType::POINT_LIGHT:
             render_point_lights(pass_type);
             break;
+        case PassType::ALPHA_LIGHT:
+            render_alpha_lights(pass_type);
     }
 }
 

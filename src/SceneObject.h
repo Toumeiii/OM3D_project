@@ -17,7 +17,7 @@ class SceneObject {
     public:
         SceneObject(std::shared_ptr<StaticMesh> mesh = nullptr, std::shared_ptr<Material> material = nullptr);
 
-        void render(PassType pass_type=PassType::MAIN) const;
+        void render(PassType pass_type=PassType::MAIN, const size_t i = 0) const;
 
         const Material& material() const;
 

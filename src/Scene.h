@@ -26,6 +26,7 @@ class Scene : NonMovable {
 
         void add_object(SceneObject obj);
         void add_light(PointLight obj);
+        void add_sphere(const std::shared_ptr<SceneObject> &obj);
 
         Span<const SceneObject> objects() const;
         Span<const PointLight> point_lights() const;
@@ -45,6 +46,7 @@ class Scene : NonMovable {
     private:
         std::vector<SceneObject> _objects;
         std::vector<PointLight> _point_lights;
+        std::shared_ptr<SceneObject> _sphere;
 
         glm::vec3 _sun_direction = glm::vec3(0.2f, 1.0f, 0.1f);
         glm::vec3 _sun_color = glm::vec3(1.0f);
@@ -67,6 +69,7 @@ class Scene : NonMovable {
         void render_shadow(PassType pass_type) const;
         void render_sun_ibl(PassType pass_type) const;
         void render_point_lights(PassType pass_type) const;
+        void render_alpha_lights(PassType pass_type) const;
 };
 
 }

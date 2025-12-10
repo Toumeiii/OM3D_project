@@ -12,6 +12,7 @@ enum class PassType {
     DEFFERED,
     SUN_IBL,
     POINT_LIGHT,
+    ALPHA_LIGHT,
 };
 
 #endif //OM3D_PASSTYPE_HH

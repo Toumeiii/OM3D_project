@@ -441,7 +441,7 @@ Result<std::unique_ptr<Scene>> Scene::from_gltf(const std::string& file_name) {
 
                     mat = std::make_shared<Material>(Material::textured_pbr_material(alpha_test));
 
-                    if(!opaque && !mask) {
+                    if(!opaque) {
                         mat->set_blend_mode(BlendMode::Alpha);
                         mat->set_depth_test_mode(DepthTestMode::None);
                     }

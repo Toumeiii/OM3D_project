@@ -28,7 +28,7 @@ static const char * states[STATES_SIZE] = {
     "Normals",
     "Roughness",
     "Metalness",
-    "Sun IBL",
+    "No deferred",
 };
 
 static const char* current_state = states[0];
@@ -40,6 +40,7 @@ static float sun_intensity = 7.0f;
 static float ibl_intensity = 1.0f;
 static float exposure = 0.33f;
 
+static std::shared_ptr<SceneObject> sphere;
 static std::unique_ptr<Scene> scene;
 static std::shared_ptr<Texture> envmap;
 
@@ -147,6 +148,20 @@ void load_scene(const std::string& filename) {
         scene->set_envmap(envmap);
         scene->set_ibl_intensity(ibl_intensity);
         scene->set_sun(sun_altitude, sun_azimuth, glm::vec3(sun_intensity));
+        scene->add_sphere(sphere);
+    } else {
+        std::cerr << "Unable to load scene (" << filename << ")" << std::endl;
+    }
+}
+
+void load_sphere(const std::string& filename) {
+    if(auto res = Scene::from_gltf(filename); res.is_ok) {
+        auto objects = res.value->objects();
+        if (objects.size() < 1) {
+            std::cerr << "Unable to load sphere (" << filename << ")" << std::endl;
+        } else {
+            sphere = std::make_shared<SceneObject>(objects[0]);
+        }
     } else {
         std::cerr << "Unable to load scene (" << filename << ")" << std::endl;
     }
@@ -376,6 +391,7 @@ void gui(ImGuiRenderer& imgui) {
 
 
 void load_default_scene() {
+    load_sphere(std::string(data_path) + "sphere.glb");
     load_scene(std::string(data_path) + "DamagedHelmet.glb");
     load_envmap(std::string(data_path) + "pretoria_gardens.jpg");
 
@@ -473,7 +489,6 @@ int main(int argc, char** argv) {
     auto tonemap_program = Program::from_files("tonemap.frag", "screen.vert");
     auto debug_program = Program::from_files("debug.frag", "screen.vert");
     auto sun_ibl_program = Program::from_files("sun_ibl.frag", "screen.vert");
-    auto point_lights_program = Program::from_files("point_lights.frag", "screen.vert");
     RendererState renderer;
 
     for(;;) {
@@ -555,34 +570,33 @@ int main(int argc, char** argv) {
 
             {
                 PROFILE_GPU("Point Lights Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Sun & IBL Pass");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Point Lights Pass");
 
                 renderer.sun_ibl_framebuffer.bind(false, false);
 
-                renderer.depth_texture.bind(0);
-                renderer.albedo_roughness_texture.bind(1);
-                renderer.normal_metalness_texture.bind(2);
                 renderer.shadow_texture.bind(6);
-
-                point_lights_program->bind();
+                renderer.depth_texture.bind(7);
+                renderer.albedo_roughness_texture.bind(8);
+                renderer.normal_metalness_texture.bind(9);
 
                 scene->render(PassType::POINT_LIGHT);
 
                 glPopDebugGroup();
             }
 
-            // Render the scene
-            /*{
-                PROFILE_GPU("Main pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main pass");
 
-                renderer.main_framebuffer.bind(false, true);
+            // Render the scene
+            {
+                PROFILE_GPU("Alpha Pass");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Alpha Pass");
+
+                renderer.main_framebuffer.bind(false, false);
                 renderer.shadow_texture.bind(6);
 
-                scene->render(PassType::MAIN);
+                scene->render(PassType::ALPHA_LIGHT);
 
-                glPopDebugGroup();  // Main pass
-            }*/
+                glPopDebugGroup();  // Alpha Pass
+            }
 
             // Apply a tonemap as a full screen pass
             {
@@ -599,7 +613,7 @@ int main(int argc, char** argv) {
             }
 
             {
-                if (current_state != nullptr && current_state != states[0]) {
+                if (current_state != nullptr && current_state != states[0] && current_state != states[6]) {
                     PROFILE_GPU("Debug");
                     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Debug");
 
