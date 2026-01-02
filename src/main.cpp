@@ -390,7 +390,7 @@ void gui(ImGuiRenderer& imgui) {
 
 
 
-void load_default_scene() {
+void load_default_scene() { // TODO: create a plane sea and an env (not need light maybe)
     load_sphere(std::string(data_path) + "sphere.glb");
     load_scene(std::string(data_path) + "DamagedHelmet.glb");
     load_envmap(std::string(data_path) + "pretoria_gardens.jpg");
@@ -412,7 +412,7 @@ void load_default_scene() {
     }
 }
 
-struct RendererState {
+struct RendererState { // TODO: delete unuse texture and framebuffer
     static RendererState create(glm::uvec2 size) {
         RendererState state;
 
@@ -486,6 +486,7 @@ int main(int argc, char** argv) {
 
     load_default_scene();
 
+    // TODO: create program for sea (maybe not here) and delete unused
     auto tonemap_program = Program::from_files("tonemap.frag", "screen.vert");
     auto debug_program = Program::from_files("debug.frag", "screen.vert");
     auto sun_ibl_program = Program::from_files("sun_ibl.frag", "screen.vert");
@@ -519,6 +520,7 @@ int main(int argc, char** argv) {
             PROFILE_GPU("Frame");
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
 
+            // TODO: delete
             {
                 PROFILE_GPU("Z-prepass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Z-prepass");
@@ -530,6 +532,8 @@ int main(int argc, char** argv) {
                 glPopDebugGroup();  // Z-prepass
             }
 
+
+            // TODO: delete
             {
                 PROFILE_GPU("Shadow Pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Pass");
@@ -540,6 +544,7 @@ int main(int argc, char** argv) {
                 glPopDebugGroup();  // Shadow Pass
             }
 
+            // TODO: delete
             {
                 PROFILE_GPU("Deferred Pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Deferred Pass");
@@ -550,6 +555,7 @@ int main(int argc, char** argv) {
                 glPopDebugGroup(); // Deferred Pass
             }
 
+            // TODO: delete
             {
                 PROFILE_GPU("Sun & IBL Pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Sun & IBL Pass");
@@ -568,6 +574,7 @@ int main(int argc, char** argv) {
                 glPopDebugGroup(); // Sun & IBL Pass
             }
 
+            // TODO: delete
             {
                 PROFILE_GPU("Point Lights Pass");
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Point Lights Pass");
@@ -585,6 +592,7 @@ int main(int argc, char** argv) {
             }
 
 
+            // TODO: redo to show opaque and transparent objects (sea dont now type -> to decide)
             // Render the scene
             {
                 PROFILE_GPU("Alpha Pass");
@@ -598,6 +606,7 @@ int main(int argc, char** argv) {
                 glPopDebugGroup();  // Alpha Pass
             }
 
+            // TODO: keep but modify a bit
             // Apply a tonemap as a full screen pass
             {
                 PROFILE_GPU("Tonemap");
@@ -612,6 +621,7 @@ int main(int argc, char** argv) {
                 glPopDebugGroup();  // Tonemap
             }
 
+            // TODO: delete
             {
                 if (current_state != nullptr && current_state != states[0] && current_state != states[6]) {
                     PROFILE_GPU("Debug");

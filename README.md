@@ -18,3 +18,15 @@ make
 If you have a problem, please send a mail to
 - alexandre.lamure@epita.fr
 - gregoire.angerand@gmail.com
+
+### TODO
+in file :
+- main.cpp
+- ocean_control.tess
+- ocean_evaluation.tess
+- ocean.frag
+- ocean.vert
+
+Look if need for file for tesselation.
+
+separate task to do.
