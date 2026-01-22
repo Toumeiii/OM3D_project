@@ -398,7 +398,7 @@ void gui(ImGuiRenderer& imgui) {
 
 void load_default_scene() { // TODO: create a plane sea and an env (not need light maybe)
     load_sphere(std::string(data_path) + "sphere.glb");
-    load_scene(std::string(data_path) + "empty.glb");
+    load_scene(std::string(data_path) + "DamagedHelmet.glb");
     load_envmap(std::string(data_path) + "cubemap.png");
 
     // Add lights
