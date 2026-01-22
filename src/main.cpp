@@ -10,6 +10,7 @@
 #include <Framebuffer.h>
 #include <TimestampQuery.h>
 #include <ImGuiRenderer.h>
+#include <Ocean.h>
 
 #include <imgui/imgui.h>
 
@@ -142,6 +143,10 @@ void load_envmap(const std::string& filename) {
     }
 }
 
+void add_ocean() {
+    scene->add_object(get_ocean());
+}
+
 void load_scene(const std::string& filename) {
     if(auto res = Scene::from_gltf(filename); res.is_ok) {
         scene = std::move(res.value);
@@ -152,6 +157,7 @@ void load_scene(const std::string& filename) {
     } else {
         std::cerr << "Unable to load scene (" << filename << ")" << std::endl;
     }
+    add_ocean();
 }
 
 void load_sphere(const std::string& filename) {
@@ -392,7 +398,7 @@ void gui(ImGuiRenderer& imgui) {
 
 void load_default_scene() { // TODO: create a plane sea and an env (not need light maybe)
     load_sphere(std::string(data_path) + "sphere.glb");
-    load_scene(std::string(data_path) + "DamagedHelmet.glb");
+    load_scene(std::string(data_path) + "empty.glb");
     load_envmap(std::string(data_path) + "cubemap.png");
 
     // Add lights
