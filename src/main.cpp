@@ -40,8 +40,11 @@ static float sun_azimuth = 45.0f;
 static float sun_intensity = 7.0f;
 static float ibl_intensity = 1.0f;
 static float exposure = 0.33f;
+static float ocean_size = 100.f;
 
 static std::shared_ptr<SceneObject> sphere;
+
+static std::shared_ptr<SceneObject> ocean;
 static std::unique_ptr<Scene> scene;
 static std::shared_ptr<Texture> envmap;
 
@@ -143,9 +146,6 @@ void load_envmap(const std::string& filename) {
     }
 }
 
-void add_ocean() {
-    scene->add_object(get_ocean());
-}
 
 void load_scene(const std::string& filename) {
     if(auto res = Scene::from_gltf(filename); res.is_ok) {
@@ -154,10 +154,10 @@ void load_scene(const std::string& filename) {
         scene->set_ibl_intensity(ibl_intensity);
         scene->set_sun(sun_altitude, sun_azimuth, glm::vec3(sun_intensity));
         scene->add_sphere(sphere);
+        scene->add_ocean(ocean);
     } else {
         std::cerr << "Unable to load scene (" << filename << ")" << std::endl;
     }
-    add_ocean();
 }
 
 void load_sphere(const std::string& filename) {
@@ -273,6 +273,18 @@ void gui(ImGuiRenderer& imgui) {
             ImGui::DragFloat("Sun Azimuth", &sun_azimuth, 0.1f, 0.0f, 360.0f, "%.0f");
             ImGui::DragFloat("Sun Intensity", &sun_intensity, 0.05f, 0.0f, 100.0f, "%.1f");
             scene->set_sun(sun_altitude, sun_azimuth, glm::vec3(sun_intensity));
+
+            ImGui::EndMenu();
+        }
+
+        if(scene && ImGui::BeginMenu("Ocean parameter")) {
+            ImGui::InputFloat("Ocean Size", &ocean_size);
+            ocean->set_transform({
+                ocean_size,         0., 0.,                 0.,
+                0.,                 1., 0.,                 0.,
+                0.,                 0., ocean_size,         0.,
+                - ocean_size / 2.,  0., - ocean_size / 2.,  1.,
+            });
 
             ImGui::EndMenu();
         }
@@ -398,6 +410,7 @@ void gui(ImGuiRenderer& imgui) {
 
 void load_default_scene() { // TODO: create a plane sea and an env (not need light maybe)
     load_sphere(std::string(data_path) + "sphere.glb");
+    ocean = std::make_shared<SceneObject>(get_ocean());
     load_scene(std::string(data_path) + "DamagedHelmet.glb");
     load_envmap(std::string(data_path) + "cubemap.png");
 

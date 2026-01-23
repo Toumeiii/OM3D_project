@@ -10,10 +10,9 @@ namespace OM3D {
     inline SceneObject get_ocean() {
 
         auto material = std::make_shared<Material>(Material::textured_pbr_material());
-        if(auto res = TextureData::from_file(std::string(data_path) + "ocean_texture.jpg"); res.is_ok) {
+        if(auto res = TextureData::from_file(std::string(data_path) + "ocean_texture.png"); res.is_ok) {
             auto ocean_texture = std::make_shared<Texture>(res.value);
             material->set_texture(0u, ocean_texture);
-            material->set_texture(2u, default_metal_rough_texture());
         }
 
         auto ocean = SceneObject(

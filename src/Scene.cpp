@@ -30,6 +30,10 @@ void Scene::add_sphere(const std::shared_ptr<SceneObject> &obj) {
     _sphere = obj;
 }
 
+void Scene::add_ocean(const std::shared_ptr<SceneObject> &obj) {
+    _ocean = obj;
+}
+
 Span<const SceneObject> Scene::objects() const {
     return _objects;
 }
@@ -200,6 +204,7 @@ std::pair<std::vector<const SceneObject*>, std::vector<const SceneObject*>> Scen
             obj.material().is_opaque() ? opaque.emplace_back(&obj) : transparent.emplace_back(&obj);
         }
     }
+    transparent.emplace_back(_ocean.get());
     return std::make_pair(opaque, transparent);
 }
 
@@ -311,7 +316,7 @@ void Scene::render_point_lights([[maybe_unused]] const PassType pass_type) const
     set_light(point_light_buffer);
 
     for (size_t i = 0; i < _point_lights.size(); ++i) {
-        [[maybe_unused]] const BoundingSphere bounding_sphere = {
+        const BoundingSphere bounding_sphere = {
             _point_lights[i].position(),
             _point_lights[i].radius()
         };

@@ -27,6 +27,7 @@ class Scene : NonMovable {
         void add_object(SceneObject obj);
         void add_light(PointLight obj);
         void add_sphere(const std::shared_ptr<SceneObject> &obj);
+        void add_ocean(const std::shared_ptr<SceneObject> &obj);
 
         Span<const SceneObject> objects() const;
         Span<const PointLight> point_lights() const;
@@ -47,6 +48,7 @@ class Scene : NonMovable {
         std::vector<SceneObject> _objects;
         std::vector<PointLight> _point_lights;
         std::shared_ptr<SceneObject> _sphere;
+        std::shared_ptr<SceneObject> _ocean;
 
         glm::vec3 _sun_direction = glm::vec3(0.2f, 1.0f, 0.1f);
         glm::vec3 _sun_color = glm::vec3(1.0f);

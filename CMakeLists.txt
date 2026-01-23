@@ -39,6 +39,8 @@ file(GLOB_RECURSE EXTERNAL_FILES
 file(GLOB_RECURSE SHADER_FILES
     "shaders/*.frag"
     "shaders/*.vert"
+    "shaders/*.tesc"
+    "shaders/*.tese"
     "shaders/*.geom"
     "shaders/*.comp"
     "shaders/*.glsl"
