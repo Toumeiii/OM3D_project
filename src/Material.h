@@ -46,12 +46,13 @@ class Material {
             _program->set_uniform(FWD(args)...);
         }
 
-        void bind(PassType pass_type=PassType::MAIN) const;
+        void bind(PassType pass_type=PassType::DEFAULT) const;
 
         static Material textured_pbr_material(bool alpha_test = false);
 
     private:
         std::shared_ptr<Program> _program;
+        std::shared_ptr<Program> _main_program;
         std::shared_ptr<Program> _depth_program;
         std::shared_ptr<Program> _deferred_program;
         std::shared_ptr<Program> _point_light_program;

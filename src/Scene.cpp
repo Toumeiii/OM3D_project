@@ -347,6 +347,10 @@ void Scene::render(const PassType pass_type) const {
             break;
         case PassType::ALPHA_LIGHT:
             render_alpha_lights(pass_type);
+            break;
+        case PassType::DEFAULT:
+            render_main(pass_type);
+            break;
     }
 }
 

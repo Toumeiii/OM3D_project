@@ -6,6 +6,7 @@
 #define OM3D_PASSTYPE_HH
 
 enum class PassType {
+    DEFAULT,
     MAIN,
     DEPTH,
     SHADOW,

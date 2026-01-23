@@ -22,7 +22,7 @@ class Scene : NonMovable {
 
         static Result<std::unique_ptr<Scene>> from_gltf(const std::string& file_name);
 
-        void render(PassType pass_type=PassType::MAIN) const;
+        void render(PassType pass_type=PassType::DEFAULT) const;
 
         void add_object(SceneObject obj);
         void add_light(PointLight obj);

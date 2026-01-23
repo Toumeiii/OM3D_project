@@ -15,6 +15,10 @@ void SceneObject::render(const PassType pass_type, const size_t i) const {
         return;
     }
     switch(pass_type) {
+        case PassType::MAIN:
+            _material->set_depth_test_mode(DepthTestMode::Standard);
+            _material->set_blend_mode(BlendMode::None);
+            break;
         case PassType::DEPTH:
             _material->set_depth_test_mode(DepthTestMode::Standard);
             break;

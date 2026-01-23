@@ -32,7 +32,7 @@ static const char * states[STATES_SIZE] = {
     "No deferred",
 };
 
-static const char* current_state = states[0];
+static const char* current_state = states[6];
 
 static float delta_time = 0.0f;
 static float sun_altitude = 45.0f;
@@ -526,90 +526,103 @@ int main(int argc, char** argv) {
             PROFILE_GPU("Frame");
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
 
-            // TODO: delete
-            {
-                PROFILE_GPU("Z-prepass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Z-prepass");
+            if (current_state == states[6]) {
+                {
+                    PROFILE_GPU("Main Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main Pass");
+
+                    renderer.main_framebuffer.bind(true, false);
+
+                    scene->render(PassType::MAIN);
+
+                    glPopDebugGroup();  // Main Pass
+                }
+            } else {
+                // TODO: delete
+                {
+                    PROFILE_GPU("Z-prepass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Z-prepass");
 
 
-                renderer.depth_framebuffer.bind(true, false);
-                scene->render(PassType::DEPTH);
+                    renderer.depth_framebuffer.bind(true, false);
+                    scene->render(PassType::DEPTH);
 
-                glPopDebugGroup();  // Z-prepass
-            }
-
-
-            // TODO: delete
-            {
-                PROFILE_GPU("Shadow Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Pass");
-
-                renderer.shadow_framebuffer.bind(true, false);
-                scene->render(PassType::SHADOW);
-
-                glPopDebugGroup();  // Shadow Pass
-            }
-
-            // TODO: delete
-            {
-                PROFILE_GPU("Deferred Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Deferred Pass");
-
-                renderer.deferred_framebuffer.bind(false, true);
-                scene->render(PassType::DEFFERED);
-
-                glPopDebugGroup(); // Deferred Pass
-            }
-
-            // TODO: delete
-            {
-                PROFILE_GPU("Sun & IBL Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Sun & IBL Pass");
-
-                renderer.sun_ibl_framebuffer.bind(false, false);
-
-                renderer.depth_texture.bind(0);
-                renderer.albedo_roughness_texture.bind(1);
-                renderer.normal_metalness_texture.bind(2);
-                renderer.shadow_texture.bind(6);
-
-                sun_ibl_program->bind();
-
-                scene->render(PassType::SUN_IBL);
-
-                glPopDebugGroup(); // Sun & IBL Pass
-            }
-
-            // TODO: delete
-            {
-                PROFILE_GPU("Point Lights Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Point Lights Pass");
-
-                renderer.sun_ibl_framebuffer.bind(false, false);
-
-                renderer.shadow_texture.bind(6);
-                renderer.depth_texture.bind(7);
-                renderer.albedo_roughness_texture.bind(8);
-                renderer.normal_metalness_texture.bind(9);
-
-                scene->render(PassType::POINT_LIGHT);
-
-                glPopDebugGroup();
-            }
+                    glPopDebugGroup();  // Z-prepass
+                }
 
 
-            // TODO: redo to show opaque and transparent objects (sea dont now type -> to decide)
-            // Render the scene
-            {
-                PROFILE_GPU("Alpha Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Alpha Pass");
+                // TODO: delete
+                {
+                    PROFILE_GPU("Shadow Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Pass");
 
-                renderer.main_framebuffer.bind(false, false);
-                renderer.shadow_texture.bind(6);
+                    renderer.shadow_framebuffer.bind(true, false);
+                    scene->render(PassType::SHADOW);
 
-                scene->render(PassType::ALPHA_LIGHT);
+                    glPopDebugGroup();  // Shadow Pass
+                }
 
-                glPopDebugGroup();  // Alpha Pass
+                // TODO: delete
+                {
+                    PROFILE_GPU("Deferred Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Deferred Pass");
+
+                    renderer.deferred_framebuffer.bind(false, true);
+                    scene->render(PassType::DEFFERED);
+
+                    glPopDebugGroup(); // Deferred Pass
+                }
+
+                // TODO: delete
+                {
+                    PROFILE_GPU("Sun & IBL Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Sun & IBL Pass");
+
+                    renderer.sun_ibl_framebuffer.bind(false, false);
+
+                    renderer.depth_texture.bind(0);
+                    renderer.albedo_roughness_texture.bind(1);
+                    renderer.normal_metalness_texture.bind(2);
+                    renderer.shadow_texture.bind(6);
+
+                    sun_ibl_program->bind();
+
+                    scene->render(PassType::SUN_IBL);
+
+                    glPopDebugGroup(); // Sun & IBL Pass
+                }
+
+                // TODO: delete
+                {
+                    PROFILE_GPU("Point Lights Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Point Lights Pass");
+
+                    renderer.sun_ibl_framebuffer.bind(false, false);
+
+                    renderer.shadow_texture.bind(6);
+                    renderer.depth_texture.bind(7);
+                    renderer.albedo_roughness_texture.bind(8);
+                    renderer.normal_metalness_texture.bind(9);
+
+                    scene->render(PassType::POINT_LIGHT);
+
+                    glPopDebugGroup();
+                }
+
+
+                // TODO: redo to show opaque and transparent objects (sea dont now type -> to decide)
+                // Render the scene
+                {
+                    PROFILE_GPU("Alpha Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Alpha Pass");
+
+                    renderer.main_framebuffer.bind(false, false);
+                    renderer.shadow_texture.bind(6);
+
+                    scene->render(PassType::ALPHA_LIGHT);
+
+                    glPopDebugGroup();  // Alpha Pass
+                }
             }
 
             // TODO: keep but modify a bit
