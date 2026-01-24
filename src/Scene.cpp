@@ -6,6 +6,7 @@
 #include <shader_structs.h>
 #include <vector>
 
+#include "Ocean.h"
 #include "glad/gl.h"
 #include "glm/ext/quaternion_geometric.hpp"
 
@@ -30,7 +31,7 @@ void Scene::add_sphere(const std::shared_ptr<SceneObject> &obj) {
     _sphere = obj;
 }
 
-void Scene::add_ocean(const std::shared_ptr<SceneObject> &obj) {
+void Scene::add_ocean(const std::shared_ptr<std::vector<SceneObject>> &obj) {
     _ocean = obj;
 }
 
@@ -204,7 +205,11 @@ std::pair<std::vector<const SceneObject*>, std::vector<const SceneObject*>> Scen
             obj.material().is_opaque() ? opaque.emplace_back(&obj) : transparent.emplace_back(&obj);
         }
     }
-    transparent.emplace_back(_ocean.get());
+    for (const auto &obj : (* _ocean)) {
+        if (obj.collide(camera)) {
+            transparent.emplace_back(&obj);
+        }
+    }
     return std::make_pair(opaque, transparent);
 }
 
