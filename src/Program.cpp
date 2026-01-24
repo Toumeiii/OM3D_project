@@ -120,6 +120,32 @@ static void link_program(GLuint handle) {
 }
 
 
+Program::Program(
+        const std::string &frag,
+        const std::string &tese,
+        const std::string &tesc,
+        const std::string &vert,
+        const u32 patch_size
+    ) : _handle(glCreateProgram()), _program_type(TESSELLATION), _patch_size(patch_size) {
+    const GLuint vert_handle = create_shader(vert, GL_VERTEX_SHADER);
+    const GLuint tesc_handle = create_shader(tesc, GL_TESS_CONTROL_SHADER);
+    const GLuint tese_handle = create_shader(tese, GL_TESS_EVALUATION_SHADER);
+    const GLuint frag_handle = create_shader(frag, GL_FRAGMENT_SHADER);
+
+    glAttachShader(_handle.get(), vert_handle);
+    glAttachShader(_handle.get(), tesc_handle);
+    glAttachShader(_handle.get(), tese_handle);
+    glAttachShader(_handle.get(), frag_handle);
+
+    link_program(_handle.get());
+
+    glDeleteShader(vert_handle);
+    glDeleteShader(tesc_handle);
+    glDeleteShader(tese_handle);
+    glDeleteShader(frag_handle);
+
+    fetch_uniform_locations();
+}
 
 Program::Program(const std::string& frag, const std::string& vert) : _handle(glCreateProgram()) {
     const GLuint vert_handle = create_shader(vert, GL_VERTEX_SHADER);
@@ -136,7 +162,7 @@ Program::Program(const std::string& frag, const std::string& vert) : _handle(glC
     fetch_uniform_locations();
 }
 
-Program::Program(const std::string& comp) : _handle(glCreateProgram()), _is_compute(true) {
+Program::Program(const std::string& comp) : _handle(glCreateProgram()), _program_type(COMPUTE) {
     const GLuint comp_handle = create_shader(comp, GL_COMPUTE_SHADER);
 
     glAttachShader(_handle.get(), comp_handle);
@@ -178,8 +204,12 @@ void Program::bind() const {
     glUseProgram(_handle.get());
 }
 
-bool Program::is_compute() const {
-    return _is_compute;
+ProgramType Program::get_program_type() const {
+    return _program_type;
+}
+
+GLint Program::get_patch_size() const {
+    return _patch_size;
 }
 
 std::shared_ptr<Program> Program::from_file(const std::string& comp, Span<const std::string> defines) {
@@ -208,6 +238,36 @@ std::shared_ptr<Program> Program::from_files(const std::string& frag, const std:
     auto program = weak_program.lock();
     if(!program) {
         program = std::make_shared<Program>(read_shader(frag, defines), read_shader(vert, defines));
+        weak_program = program;
+    }
+    return program;
+}
+
+std::shared_ptr<Program> Program::from_files(
+        const std::string& frag,
+        const std::string& tese,
+        const std::string& tesc,
+        const std::string& vert,
+        const u32 patch_size,
+        Span<const std::string> defines
+    ) {
+    static std::unordered_map<std::vector<std::string>, std::weak_ptr<Program>, CollectionHasher<std::vector<std::string>>> loaded;
+
+    std::vector<std::string> key(defines.begin(), defines.end());
+    key.emplace_back(frag);
+    key.emplace_back(tese);
+    key.emplace_back(tesc);
+    key.emplace_back(vert);
+
+    auto& weak_program = loaded[key];
+    auto program = weak_program.lock();
+    if(!program) {
+        program = std::make_shared<Program>(
+            read_shader(frag, defines),
+            read_shader(tese, defines),
+            read_shader(tesc, defines),
+            read_shader(vert, defines),
+            patch_size);
         weak_program = program;
     }
     return program;

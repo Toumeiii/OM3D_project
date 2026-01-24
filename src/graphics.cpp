@@ -123,7 +123,7 @@ void init_graphics() {
         brdf_lut_texture = Texture(glm::uvec2(256), ImageFormat::RG16_UNORM, WrapMode::Clamp);
 
         std::shared_ptr<Program> brdf_program = Program::from_file("brdf.comp");
-        DEBUG_ASSERT(brdf_program && brdf_program->is_compute());
+        DEBUG_ASSERT(brdf_program && brdf_program->get_program_type() == COMPUTE);
 
         brdf_program->bind();
         brdf_lut_texture.bind_as_image(0, AccessType::WriteOnly);

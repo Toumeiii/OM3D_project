@@ -14,6 +14,18 @@ namespace OM3D {
             auto ocean_texture = std::make_shared<Texture>(res.value);
             material->set_texture(0u, ocean_texture);
         }
+        material->set_program(Program::from_files(
+                "ocean.frag",
+                "ocean.tese",
+                "ocean.tesc",
+                "ocean.vert",
+                4
+            ));
+
+        material->set_stored_uniform(HASH("alpha_cutoff"), 0.f);
+        material->set_stored_uniform(HASH("base_color_factor"), glm::vec3(1., 1., .1));
+        material->set_stored_uniform(HASH("metal_rough_factor"), glm::vec2(1., 1.));
+        material->set_stored_uniform(HASH("emissive_factor"), glm::vec3(1., 1., 1.));
 
         auto ocean = SceneObject(
             std::make_shared<StaticMesh>(
@@ -23,6 +35,13 @@ namespace OM3D {
                             {0., 0., 0.},
                             {0., 1., 0.},
                             {0., 0.},
+                            {1.0f, 0.0f, 0.0f, 0.0f},
+                            {1., 1., 1.},
+                        },
+                        Vertex {
+                            {0., 0., 1.},
+                            {0., 1., 0.},
+                            {0., 1.},
                             {1.0f, 0.0f, 0.0f, 0.0f},
                             {1., 1., 1.},
                         },
@@ -39,29 +58,9 @@ namespace OM3D {
                             {1., 0.},
                             {1.0f, 0.0f, 0.0f, 0.0f},
                             {1., 1., 1.},
-                        },Vertex {
-                            {0., 0., 0.},
-                            {0., 1., 0.},
-                            {0., 0.},
-                            {1.0f, 0.0f, 0.0f, 0.0f},
-                            {1., 1., 1.},
-                        },
-                        Vertex {
-                            {0., 0., 1.,},
-                            {0., 1., 0.,},
-                            {0., 1.},
-                            {1.0f, 0.0f, 0.0f, 0.0f},
-                            {1., 1., 1.},
-                        },
-                        Vertex {
-                            {1., 0., 1.,},
-                            {0., 1., 0.,},
-                            {1., 1.},
-                            {1.0f, 0.0f, 0.0f, 0.0f},
-                            {1., 1., 1.},
                         },
                     },
-                    { 0, 1, 2, 3, 4, 5 },
+                    { 0, 1, 2, 3 },
                 }
             ),
             std::move(material)

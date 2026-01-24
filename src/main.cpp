@@ -544,7 +544,8 @@ int main(int argc, char** argv) {
                     PROFILE_GPU("Main Pass");
                     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main Pass");
 
-                    renderer.main_framebuffer.bind(true, false);
+                    renderer.main_framebuffer.bind(true, true);
+                    renderer.shadow_texture.bind(6);
 
                     scene->render(PassType::MAIN);
 

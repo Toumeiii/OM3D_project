@@ -2,6 +2,7 @@
 
 #include <glad/gl.h>
 
+#include "Program.h"
 #include "glm/glm.hpp"
 #include "glm/geometric.hpp"
 
@@ -45,7 +46,7 @@ namespace OM3D {
         return _bounding_sphere;
     }
 
-    void StaticMesh::draw() const {
+    void StaticMesh::draw(const ProgramType program_type, const GLint patch_size) const {
     _vertex_buffer.bind(BufferUsage::Attribute);
     _index_buffer.bind(BufferUsage::Index);
 
@@ -70,7 +71,13 @@ namespace OM3D {
         audit_bindings();
     }
 
-    glDrawElements(GL_TRIANGLES, int(_index_buffer.element_count()), GL_UNSIGNED_INT, nullptr);
+    if (program_type == TESSELLATION) {
+        glPatchParameteri(GL_PATCH_VERTICES, patch_size);
+        glDrawElements(GL_PATCHES, int(_index_buffer.element_count()), GL_UNSIGNED_INT, nullptr);
+    }
+    else {
+        glDrawElements(GL_TRIANGLES, int(_index_buffer.element_count()), GL_UNSIGNED_INT, nullptr);
+    }
 }
 
 }
