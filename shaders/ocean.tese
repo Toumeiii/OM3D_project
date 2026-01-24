@@ -8,16 +8,41 @@
 // implment Jacobien for normal calculation
 // chose a M between 0.3 and 0.5 as threshold for foam generation -> color
 
+layout(location = 0) in vec3 in_normal[];
+layout(location = 1) in vec2 in_uv[];
+layout(location = 2) in vec3 in_color[];
+layout(location = 4) in vec3 in_tangent[];
+layout(location = 5) in vec3 in_bitangent[];
+
+layout(location = 0) out vec3 out_normal;
+layout(location = 1) out vec2 out_uv;
+layout(location = 2) out vec3 out_color;
+layout(location = 3) out vec3 out_position;
+layout(location = 4) out vec3 out_tangent;
+layout(location = 5) out vec3 out_bitangent;
+
 layout (quads, equal_spacing, ccw) in;
 
-out vec3 tes_color;
+layout(binding = 0) uniform Data {
+    FrameData frame;
+};
+
+uniform mat4 model;
+
+vec4 mix_4_values(vec4 a, vec4 b, vec4 c, vec4 d) {
+    vec4 v1 = mix(a, b, gl_TessCoord.x);
+    vec4 v2 = mix(d, c, gl_TessCoord.x);
+    return mix(v1, v2, gl_TessCoord.y);
+}
 
 void main() {
-    vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
-    vec4 p2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
-    vec4 p = mix(p1, p2, gl_TessCoord.y);
+    vec4 p = mix_4_values(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position, gl_in[3].gl_Position);
+    out_position = p.xyz;
+    out_normal = mix_4_values(vec4(in_normal[0], 0.), vec4(in_normal[1], 0.), vec4(in_normal[2], 0.), vec4(in_normal[3], 0.)).xyz;
+    out_uv = mix_4_values(vec4(in_uv[0], 0., 0.), vec4(in_uv[1], 0., 0.), vec4(in_uv[2], 0., 0.), vec4(in_uv[3], 0., 0.)).xy;
+    out_color = mix_4_values(vec4(in_color[0], 0.), vec4(in_color[1], 0.), vec4(in_color[2], 0.), vec4(in_color[3], 0.)).xyz;
+    out_tangent = mix_4_values(vec4(in_tangent[0], 0.), vec4(in_tangent[1], 0.), vec4(in_tangent[2], 0.), vec4(in_tangent[3], 0.)).xyz;
+    out_bitangent = mix_4_values(vec4(in_bitangent[0], 0.), vec4(in_bitangent[1], 0.), vec4(in_bitangent[2], 0.), vec4(in_bitangent[3], 0.)).xyz;
 
-    tes_color = vec3(0.0, 0.3, 0.5); // Placeholder color for ocean
-
-    gl_Position = projection_matrix * model_view_matrix * p;
+    gl_Position = frame.camera.view_proj * p;
 }

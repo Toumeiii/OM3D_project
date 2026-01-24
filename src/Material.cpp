@@ -33,6 +33,10 @@ void Material::set_texture(u32 slot, std::shared_ptr<Texture> tex) {
     }
 }
 
+std::shared_ptr<const Program> Material::get_program() {
+    return _program;
+}
+
 bool Material::is_opaque() const {
     return _blend_mode == BlendMode::None;
 }
@@ -106,9 +110,6 @@ void Material::bind(const PassType pass_type) const {
         case PassType::POINT_LIGHT:
             program = _point_light_program.get();
             break;
-        case PassType::MAIN:
-            program = _main_program.get();
-            break;
         default:
             break;
     }
@@ -128,8 +129,7 @@ Material Material::textured_pbr_material(bool alpha_test) {
         defines.emplace_back("ALPHA_TEST");
     }
 
-    material._program = Program::from_files("lit_shadow.frag", "basic.vert", defines);
-    material._main_program = Program::from_files("lit.frag", "basic.vert", defines);
+    material._program = Program::from_files("lit.frag", "basic.vert", defines);
     material._depth_program = Program::from_files("depth.frag", "basic.vert", defines);
     material._deferred_program = Program::from_files("deferred.frag", "basic.vert", defines);
     material._point_light_program = Program::from_files("point_lights.frag", "basic.vert", defines);

@@ -31,6 +31,7 @@ uniform float alpha_cutoff;
 
 layout(binding = 4) uniform samplerCube in_envmap;
 layout(binding = 5) uniform sampler2D brdf_lut;
+layout(binding = 6) uniform sampler2DShadow shadow_map;
 
 layout(binding = 0) uniform Data {
     FrameData frame;
@@ -40,21 +41,23 @@ layout(binding = 1) buffer PointLights {
     PointLight point_lights[];
 };
 
+uniform uint is_main;
+
 void main() {
     const vec3 normal_map = unpack_normal_map(texture(in_normal_texture, in_uv).xy);
     const vec3 normal = normal_map.x * in_tangent +
-                        normal_map.y * in_bitangent +
-                        normal_map.z * in_normal;
+    normal_map.y * in_bitangent +
+    normal_map.z * in_normal;
 
     const vec4 albedo_tex = texture(in_texture, in_uv);
     const vec3 base_color = in_color.rgb * albedo_tex.rgb * base_color_factor;
     const float alpha = albedo_tex.a;
 
-#ifdef ALPHA_TEST
+    #ifdef ALPHA_TEST
     if(alpha <= alpha_cutoff) {
         discard;
     }
-#endif
+    #endif
 
     const vec4 metal_rough_tex = texture(in_metal_rough, in_uv);
     const float roughness = metal_rough_tex.g * metal_rough_factor.y; // as per glTF spec
@@ -66,6 +69,12 @@ void main() {
 
     vec3 acc = texture(in_emissive, in_uv).rgb * emissive_factor;
     acc += eval_ibl(in_envmap, brdf_lut, normal, view_dir, base_color, metallic, roughness) * frame.ibl_intensity;
+    if (is_main == 0){
+        float shadow = get_shadow(shadow_map, frame.sun_view_proj, in_position);
+        if (shadow > 0.) {
+            acc += shadow * frame.sun_color * eval_brdf(normal, view_dir, frame.sun_dir, base_color, metallic, roughness);
+        }
+    }
     {
         for(uint i = 0; i != frame.point_light_count; ++i) {
             PointLight light = point_lights[i];
@@ -102,4 +111,3 @@ void main() {
     out_color = vec4(texture(in_envmap, normal).rgb, 1.0);
 #endif
 }
-

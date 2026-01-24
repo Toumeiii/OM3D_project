@@ -8,6 +8,8 @@
 
 #include "BoundingSphere.h"
 #include "Camera.h"
+#include "Program.h"
+#include "glad/gl.h"
 
 namespace OM3D {
 
@@ -25,7 +27,7 @@ class StaticMesh : NonCopyable {
 
         StaticMesh(const MeshData& data);
 
-        void draw() const;
+        void draw(ProgramType program_type = DEFAULT, GLint patch_size = 4) const;
         bool collide(const Camera& camera, const glm::mat4 &transform) const;
         BoundingSphere get_bounding_sphere() const;
 

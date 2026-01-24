@@ -14,7 +14,15 @@
 #include <vector>
 #include <variant>
 
+#include "glad/gl.h"
+
 namespace OM3D {
+
+enum ProgramType {
+    DEFAULT,
+    COMPUTE,
+    TESSELLATION,
+};
 
 // all possible uniform types
 using UniformValue = std::variant<
@@ -49,16 +57,31 @@ class Program : NonCopyable {
         Program(Program&&) = default;
         Program& operator=(Program&&) = default;
 
+        Program(
+            const std::string& frag,
+            const std::string& tese,
+            const std::string& tesc,
+            const std::string& vert,
+            u32 patch_size
+            );
         Program(const std::string& frag, const std::string& vert);
         Program(const std::string& comp);
         ~Program();
 
         void bind() const;
 
-        bool is_compute() const;
+        [[nodiscard]] ProgramType get_program_type() const;
+        [[nodiscard]] GLint get_patch_size() const;
 
         static std::shared_ptr<Program> from_file(const std::string& comp, Span<const std::string> defines = {});
         static std::shared_ptr<Program> from_files(const std::string& frag, const std::string& vert, Span<const std::string> defines = {});
+        static std::shared_ptr<Program> from_files(
+            const std::string& frag,
+            const std::string& tese,
+            const std::string& tesc,
+            const std::string& vert,
+            u32 patch_size,
+            Span<const std::string> defines = {});
 
         void set_uniform(u32 name_hash, u32 value);
         void set_uniform(u32 name_hash, float value);
@@ -84,8 +107,8 @@ class Program : NonCopyable {
         GLHandle _handle;
         std::vector<UniformLocationInfo> _uniform_locations;
 
-        bool _is_compute = false;
-
+        ProgramType _program_type = DEFAULT;
+        GLint _patch_size = 0;
 };
 
 }

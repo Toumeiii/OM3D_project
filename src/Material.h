@@ -30,10 +30,12 @@ class Material {
         Material();
 
         void set_program(std::shared_ptr<Program> prog);
+        void set_main_program(std::shared_ptr<Program> prog);
         void set_blend_mode(BlendMode blend);
         void set_depth_test_mode(DepthTestMode depth);
         void set_double_sided(bool double_sided);
         void set_texture(u32 slot, std::shared_ptr<Texture> tex);
+        std::shared_ptr<const Program> get_program();
 
         bool is_opaque() const;
 
