@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
 
 namespace OM3D {
 

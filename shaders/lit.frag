@@ -31,7 +31,6 @@ uniform float alpha_cutoff;
 
 layout(binding = 4) uniform samplerCube in_envmap;
 layout(binding = 5) uniform sampler2D brdf_lut;
-layout(binding = 6) uniform sampler2DShadow shadow_map;
 
 layout(binding = 0) uniform Data {
     FrameData frame;
@@ -67,12 +66,6 @@ void main() {
 
     vec3 acc = texture(in_emissive, in_uv).rgb * emissive_factor;
     acc += eval_ibl(in_envmap, brdf_lut, normal, view_dir, base_color, metallic, roughness) * frame.ibl_intensity;
-    {
-        float shadow = get_shadow(shadow_map, frame.sun_view_proj, in_position);
-        if (shadow > 0.) {
-            acc += shadow * frame.sun_color * eval_brdf(normal, view_dir, frame.sun_dir, base_color, metallic, roughness);
-        }
-    }
     {
         for(uint i = 0; i != frame.point_light_count; ++i) {
             PointLight light = point_lights[i];
