@@ -42,14 +42,20 @@ namespace OM3D {
             },
         };
         std::shared_ptr<Program> _program;
+        std::shared_ptr<std::vector<SceneObject>> _result = std::make_shared<std::vector<SceneObject>>();
+        size_t _iteration = 5;
+        bool _update_ocean = true;
+
+        void compute_ocean();
 
     public:
-        float y_level = 0.f;
-        float min_size = .1f;
-        size_t iteration = 5;
 
         Ocean();
-        [[nodiscard]] std::vector<SceneObject> get_ocean(const Camera &camera, float tesselation_level) const;
+
+        void set_iteration(size_t iteration);
+
+        [[nodiscard]] std::shared_ptr<std::vector<SceneObject>> get_ocean(const Camera &camera, float y_level, float min_size, float tesselation_level) const;
+        [[nodiscard]] std::shared_ptr<std::vector<SceneObject>> get_ocean(const Camera &camera, float y_level, float min_size, float tesselation_level);
     };
 }
 

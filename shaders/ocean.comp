@@ -93,15 +93,13 @@ const vec3 other_layer[48] = {
     vec3(1., 0., .5)
 };
 
-uniform float min_size;
-
 void main() {
     if (gl_GlobalInvocationID.y < 1) {
         uint index = gl_GlobalInvocationID.x;
         if (index < 16)
-            vertices[index] = first_layer[gl_GlobalInvocationID.x] * min_size;
+            vertices[index] = first_layer[gl_GlobalInvocationID.x];
     } else {
         uint index = (gl_GlobalInvocationID.y * 48 - 32) + gl_GlobalInvocationID.x;
-        vertices[index] = other_layer[gl_GlobalInvocationID.x] * min_size * pow(2, float(gl_GlobalInvocationID.y));
+        vertices[index] = other_layer[gl_GlobalInvocationID.x] * pow(2, float(gl_GlobalInvocationID.y));
     }
 }

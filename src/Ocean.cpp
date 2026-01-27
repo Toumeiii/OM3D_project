@@ -28,21 +28,57 @@ namespace OM3D {
         _material = material;
     }
 
-    std::vector<SceneObject> Ocean::get_ocean(const Camera &camera, float tesselation_level) const {
-        if (iteration < 1)
-            return std::vector<SceneObject>{};
+    void Ocean::set_iteration(const size_t iteration) {
+        if (_iteration != iteration) {
+            _iteration = iteration;
+            _update_ocean = true;
+        }
+    }
 
-        const size_t count = (iteration * 12 - 8);
+    std::shared_ptr<std::vector<SceneObject>> Ocean::get_ocean(
+            const Camera &camera,
+            const float y_level,
+            const float min_size,
+            const float tesselation_level) const {
+        const float y_dist = 1.f + glm::abs(camera.position().y - y_level);
+        for (auto &obj : *_result) {
+            obj.set_transform({
+                min_size * y_dist, 0., 0., 0.,
+                0., y_dist, 0., 0.,
+                0., 0., min_size * y_dist, 0.,
+                camera.position().x, y_level, camera.position().z, 1.,
+            });
+            obj.material().set_uniform(HASH("tesselation_level"), tesselation_level);
+        }
+        return _result;
+    }
+
+    std::shared_ptr<std::vector<SceneObject>> Ocean::get_ocean(
+            const Camera &camera,
+            const float y_level,
+            const float min_size,
+            const float tesselation_level) {
+        if (_update_ocean) {
+            _update_ocean = false;
+            compute_ocean();
+        }
+        return static_cast<const Ocean*>(this)->get_ocean(camera, y_level, min_size, tesselation_level);
+    }
+
+    void Ocean::compute_ocean() {
+        if (_iteration < 1)
+            _result = std::make_shared<std::vector<SceneObject>>();
+
+        const size_t count = (_iteration * 12 - 8);
         const TypedBuffer<glm::vec4> ocean(nullptr, count * 4);
 
 
         {
             ocean.bind(BufferUsage::Storage, 0);
 
-            _program->set_uniform(HASH("min_size"), min_size * (1 + glm::abs(camera.position().y)));
             _program->bind();
 
-            glDispatchCompute(1, iteration, 1);
+            glDispatchCompute(1, _iteration, 1);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
         }
 
@@ -93,10 +129,10 @@ namespace OM3D {
                 1, 0., 0., 0.,
                 0., 1., 0., 0.,
                 0., 0., 1., 0.,
-                camera.position().x, 0., camera.position().z, 1.,
+                0, 0., 0, 1.,
             });
         }
-        _material->set_uniform(HASH("tesselation_level"), tesselation_level);
-        return result;
+
+        *_result = std::move(result);
     }
 }
