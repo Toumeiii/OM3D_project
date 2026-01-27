@@ -18,14 +18,16 @@ layout(location = 5) out vec3 out_bitangent[];
 
 layout (vertices = 4) out;
 
+uniform float tesselation_level;
+
 void main() {
 
-    gl_TessLevelOuter[0] = 10.0;
-    gl_TessLevelOuter[1] = 10.0;
-    gl_TessLevelOuter[2] = 10.0;
-    gl_TessLevelOuter[3] = 10.0;
-    gl_TessLevelInner[0] = 10.0;
-    gl_TessLevelInner[1] = 10.0;
+    gl_TessLevelOuter[0] = tesselation_level;
+    gl_TessLevelOuter[1] = tesselation_level;
+    gl_TessLevelOuter[2] = tesselation_level;
+    gl_TessLevelOuter[3] = tesselation_level;
+    gl_TessLevelInner[0] = tesselation_level;
+    gl_TessLevelInner[1] = tesselation_level;
 
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 

@@ -1,0 +1,107 @@
+#version 450
+
+layout(local_size_x = 48, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = 0) buffer Vertex {
+    vec3 vertices[];
+};
+
+const vec3 first_layer[16] = {
+    vec3(-1., 0., -1.),
+    vec3(-1., 0., 0.),
+    vec3(0., 0., 0.),
+    vec3(0., 0., -1.),
+
+    vec3(-1., 0., 0.),
+    vec3(-1., 0., 1.),
+    vec3(0., 0., 1.),
+    vec3(0., 0., 0.),
+
+    vec3(0., 0., 0.),
+    vec3(0., 0., 1.),
+    vec3(1., 0., 1.),
+    vec3(1., 0., 0.),
+
+    vec3(0., 0., -1.),
+    vec3(0., 0., 0.),
+    vec3(1., 0., 0.),
+    vec3(1., 0., -1.)
+};
+
+const vec3 other_layer[48] = {
+    vec3(-1., 0., -1.),
+    vec3(-1., 0., -.5),
+    vec3(-.5, 0., -.5),
+    vec3(-.5, 0., -1.),
+
+    vec3(-.5, 0., -1.),
+    vec3(-.5, 0., -.5),
+    vec3(0., 0., -.5),
+    vec3(0., 0., -1.),
+
+    vec3(0., 0., -1.),
+    vec3(0., 0., -.5),
+    vec3(.5, 0., -.5),
+    vec3(.5, 0., -1.),
+
+    vec3(.5, 0., -1.),
+    vec3(.5, 0., -.5),
+    vec3(1., 0., -.5),
+    vec3(1., 0., -1.),
+
+
+    vec3(-1., 0., -.5),
+    vec3(-1., 0., 0.),
+    vec3(-.5, 0., 0.),
+    vec3(-.5, 0., -.5),
+
+    vec3(.5, 0., -.5),
+    vec3(.5, 0., 0.),
+    vec3(1., 0., 0.),
+    vec3(1., 0., -.5),
+
+
+    vec3(-1., 0., 0.),
+    vec3(-1., 0., .5),
+    vec3(-.5, 0., .5),
+    vec3(-.5, 0., 0.),
+
+    vec3(.5, 0., 0.),
+    vec3(.5, 0., .5),
+    vec3(1., 0., .5),
+    vec3(1., 0., 0.),
+
+
+    vec3(-1., 0., .5),
+    vec3(-1., 0., 1.),
+    vec3(-.5, 0., 1.),
+    vec3(-.5, 0., .5),
+
+    vec3(-.5, 0., .5),
+    vec3(-.5, 0., 1.),
+    vec3(0., 0., 1.),
+    vec3(0., 0., .5),
+
+    vec3(0., 0., .5),
+    vec3(0., 0., 1.),
+    vec3(.5, 0., 1.),
+    vec3(.5, 0., .5),
+
+    vec3(.5, 0., .5),
+    vec3(.5, 0., 1.),
+    vec3(1., 0., 1.),
+    vec3(1., 0., .5)
+};
+
+uniform float min_size;
+
+void main() {
+    if (gl_GlobalInvocationID.y < 1) {
+        uint index = gl_GlobalInvocationID.x;
+        if (index < 16)
+            vertices[index] = first_layer[gl_GlobalInvocationID.x] * min_size;
+    } else {
+        uint index = (gl_GlobalInvocationID.y * 48 - 32) + gl_GlobalInvocationID.x;
+        vertices[index] = other_layer[gl_GlobalInvocationID.x] * min_size * pow(2, float(gl_GlobalInvocationID.y));
+    }
+}

@@ -35,7 +35,7 @@ void SceneObject::render(const PassType pass_type, const size_t i) const {
             break;
     }
     _material->set_stored_uniform(HASH("model"), transform());
-    _material->set_stored_uniform(HASH("is_main"), static_cast<u32>(pass_type == PassType::MAIN));
+    _material->set_stored_uniform(HASH("is_main"), static_cast<glm::u32>(pass_type == PassType::MAIN));
     _material->bind(pass_type);
     _mesh->draw(_material->get_program()->get_program_type(), _material->get_program()->get_patch_size());
 }

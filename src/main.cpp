@@ -32,6 +32,8 @@ static const char * states[STATES_SIZE] = {
     "No deferred",
 };
 
+static bool camera_moved = false;
+
 static const char* current_state = states[6];
 
 static float delta_time = 0.0f;
@@ -40,11 +42,13 @@ static float sun_azimuth = 45.0f;
 static float sun_intensity = 7.0f;
 static float ibl_intensity = 1.0f;
 static float exposure = 0.33f;
-static float ocean_size = 100.f;
+static float ocean_size = 2.f;
+static int ocean_iteration = 5.f;
+static float tesselation_level = 10.f;
 
 static std::shared_ptr<SceneObject> sphere;
-
-static std::shared_ptr<SceneObject> ocean;
+static std::unique_ptr<Ocean> ocean;
+static std::shared_ptr<std::vector<SceneObject>> ocean_object = std::make_shared<std::vector<SceneObject>>();
 static std::unique_ptr<Scene> scene;
 static std::shared_ptr<Texture> envmap;
 
@@ -112,18 +116,20 @@ void process_inputs(GLFWwindow* window, Camera& camera) {
             speed *= 10.0f;
         }
 
-        if(movement.length() > 0.0f) {
+        if(glm::length(movement) > 0.0f) {
             const glm::vec3 new_pos = camera.position() + movement * delta_time * speed;
             camera.set_view(glm::lookAt(new_pos, new_pos + camera.forward(), camera.up()));
+            camera_moved = true;
         }
     }
 
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         const glm::vec2 delta = glm::vec2(mouse_pos - new_mouse_pos) * 0.01f;
-        if(delta.length() > 0.0f) {
+        if(glm::length(delta) > 0.0f) {
             glm::mat4 rot = glm::rotate(glm::mat4(1.0f), delta.x, glm::vec3(0.0f, 1.0f, 0.0f));
             rot = glm::rotate(rot, delta.y, camera.right());
             camera.set_view(glm::lookAt(camera.position(), camera.position() + (glm::mat3(rot) * camera.forward()), (glm::mat3(rot) * camera.up())));
+            camera_moved = true;
         }
     }
 
@@ -154,7 +160,8 @@ void load_scene(const std::string& filename) {
         scene->set_ibl_intensity(ibl_intensity);
         scene->set_sun(sun_altitude, sun_azimuth, glm::vec3(sun_intensity));
         scene->add_sphere(sphere);
-        scene->add_ocean(ocean);
+        *ocean_object = ocean->get_ocean(scene->camera(), tesselation_level);
+        scene->add_ocean(ocean_object);
     } else {
         std::cerr << "Unable to load scene (" << filename << ")" << std::endl;
     }
@@ -278,13 +285,18 @@ void gui(ImGuiRenderer& imgui) {
         }
 
         if(scene && ImGui::BeginMenu("Ocean parameter")) {
-            ImGui::InputFloat("Ocean Size", &ocean_size);
-            ocean->set_transform({
-                ocean_size,         0., 0.,                 0.,
-                0.,                 1., 0.,                 0.,
-                0.,                 0., ocean_size,         0.,
-                - ocean_size / 2.,  0., - ocean_size / 2.,  1.,
-            });
+            bool change = ImGui::InputFloat("Minimum_panel_size", &ocean_size);
+            change |= ImGui::InputInt("Number of iteration", &ocean_iteration);
+            change |= ImGui::DragFloat("Tesselation level", &tesselation_level, 1.f, 0.f, 100.f, "%.1f");
+
+            if (change) {
+                if (ocean_iteration < 0)
+                    ocean_iteration = 0;
+
+                ocean->min_size = ocean_size;
+                ocean->iteration = ocean_iteration;
+                camera_moved = true;
+            }
 
             ImGui::EndMenu();
         }
@@ -410,7 +422,9 @@ void gui(ImGuiRenderer& imgui) {
 
 void load_default_scene() {
     load_sphere(std::string(data_path) + "sphere.glb");
-    ocean = std::make_shared<SceneObject>(get_ocean());
+    ocean = std::make_unique<Ocean>(Ocean());
+    ocean->iteration = ocean_iteration;
+    ocean->min_size = ocean_size;
     load_scene(std::string(data_path) + "DamagedHelmet.glb");
     load_envmap(std::string(data_path) + "cubemap.png");
 
@@ -538,6 +552,16 @@ int main(int argc, char** argv) {
         {
             PROFILE_GPU("Frame");
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
+
+            if (camera_moved) {
+                PROFILE_GPU("Ocean Pass");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean Pass");
+
+                *ocean_object = ocean->get_ocean(scene->camera(), tesselation_level);
+                camera_moved = false;
+
+                glPopDebugGroup(); // Ocean Pass
+            }
 
             if (current_state == states[6]) {
                 {
