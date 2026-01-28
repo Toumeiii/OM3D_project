@@ -2,69 +2,69 @@
 
 layout(local_size_x = 16, local_size_y = 1) in;
 
-layout(binding = 0, rgba16f) uniform image2D waves_real;
-layout(binding = 1, rgba16f) uniform image2D waves_img;
+layout(binding = 0, rgba16f) uniform image2D tmp_real;
+layout(binding = 1, rgba16f) uniform image2D tmp_img;
 layout(binding = 2, rgba16f) uniform image2D result_real;
+// layout(binding = 3, rgba16f) uniform image2D result_img;
 
 const float PI = 3.14159265359;
 
-vec3 cmul_real(vec3 ar, vec3 ai, vec2 w) {
-    return ar * w.x - ai * w.y;
-}
-
-vec3 cmul_imag(vec3 ar, vec3 ai, vec2 w) {
-    return ar * w.y + ai * w.x;
+vec2 cmul(vec2 a, vec2 b) {
+    return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
 }
 
 void main(){
     int x = int(gl_GlobalInvocationID.x);
-    int size = imageSize(waves_real).x;
+    int size = imageSize(tmp_real).x;
+    if (x >= size)
+        return;
 
-    vec3 real_col[512];
-    vec3 img_col[512];
-
+    vec2 Dx[512];
+    vec2 Dy[512];
+    vec2 Dz[512];
 
     for (int y = 0; y < size; y++) {
-        vec4 r = imageLoad(waves_real, ivec2(x, y));
-        vec4 i = imageLoad(waves_img, ivec2(x, y));
-        real_col[y] = r.rgb;
-        img_col[y] = i.rgb;
+        vec4 r = imageLoad(tmp_real, ivec2(x, y));
+        vec4 i = imageLoad(tmp_img, ivec2(x, y));
+        Dx[y] = vec2(r.r, i.r);
+        Dy[y] = vec2(r.g, i.g);
+        Dz[y] = vec2(r.b, i.b);
     }
 
     for (int s = 1; s <= int(log2(size)); s++) {
         int m = 1 << s;
         int m2 = m >> 1;
         float theta = 2.0 * PI / float(m);
-
         for (int k = 0; k < size; k += m) {
-
             for (int j = 0; j < m2; j++) {
                 float ang = theta * float(j);
                 vec2 w = vec2(cos(ang), sin(ang));
-
-                int i1 = k + j;
-                int i2 = k + j + m2;
-
-                vec3 ar = real_col[i2];
-                vec3 ai = img_col[i2];
-
-                vec3 tr = cmul_real(ar, ai, w);
-                vec3 ti = cmul_imag(ar, ai, w);
-
-                vec3 ur = real_col[i1];
-                vec3 ui = img_col[i1];
-
-                real_col[i1] = ur + tr;
-                real_col[i1] = ui + ti;
-                real_col[i2] = ur - tr;
-                img_col[i2] = ui - ti;
-            } 
+                vec2 tx = cmul(w, Dx[k + j + m2]);
+                vec2 ty = cmul(w, Dy[k + j + m2]);
+                vec2 tz = cmul(w, Dz[k + j + m2]);
+                vec2 ux = Dx[k + j];
+                vec2 uy = Dy[k + j];
+                vec2 uz = Dz[k + j];
+                Dx[k + j] = ux + tx;
+                Dy[k + j] = uy + ty;
+                Dz[k + j] = uz + tz;
+                Dx[k + j + m2] = ux - tx;
+                Dy[k + j + m2] = uy - ty;
+                Dz[k + j + m2] = uz - tz;
+            }
         }
     }
-    for (int y = 0; y < size; x++) {
-        real_col[y] /= float(size);
-        img_col[y] /= float(size);
 
-        imageStore(result_real, ivec2(x, y), vec4(real_col[y], 1.0));
+    for (int y = 0; y < size; y++) {
+        Dx[y] /= float(size);
+        Dy[y] /= float(size);
+        Dz[y] /= float(size);
+        
+        // Apply frequency shift: multiply by (-1)^(x+y)
+        float sign = ((x + y) & 1) == 0 ? 1.0 : -1.0;
+        vec3 real_col = vec3(Dx[y].x, Dy[y].x, Dz[y].x) * sign;
+
+        imageStore(result_real, ivec2(x, y), vec4(real_col, 1.0));
+        // imageStore(result_img, ivec2(x, y), vec4(img_col, 1.0));
     } 
 }
