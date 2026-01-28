@@ -3,6 +3,7 @@
 layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0, rgba16f) uniform image2D displacement;    // Displacement
+layout(binding = 3, rgba16f) uniform image2D displacement_img; // Displacement
 layout(binding = 1, rgba16f) uniform image2D jacobian;    // Jacobian
 
 layout(binding = 2, rgba16f) uniform image2D h0k;
@@ -36,6 +37,7 @@ void main() {
     
     if (k_length < 1e-4) {
         imageStore(displacement, uv, vec4(0.0));
+        imageStore(displacement_img, uv, vec4(0.0));
         imageStore(jacobian, uv, vec4(0.0));
         return;
     }
@@ -62,6 +64,7 @@ void main() {
     vec2 dz = iMult(vec2(0.0, -k_norm.y), h_t);
     
     imageStore(displacement, uv, vec4(dx.x, h_t.x, dz.x,0.0));
+    imageStore(displacement_img, uv, vec4(dx.y, h_t.y, dz.y,0.0));
     
     // Jacobian
     vec2 Jxx = iMult(vec2(0.0, k.x * k_norm.x), h_t);
