@@ -51,7 +51,7 @@ const Camera& Scene::camera() const {
     return _camera;
 }
 
-Camera Scene::get_sun_camera(std::vector<const SceneObject*> *visible_objects) const{
+Camera Scene::get_depth_camera(std::vector<const SceneObject*> *visible_objects, glm::vec3 direction) const{
     bool to_delete = false;
     if (visible_objects == nullptr) {
         to_delete = true;
@@ -107,7 +107,7 @@ Camera Scene::get_sun_camera(std::vector<const SceneObject*> *visible_objects) c
         ));
 
     cam.set_view(glm::lookAt(
-        bounding_sphere.origin + glm::normalize(_sun_direction) * bounding_sphere.radius,
+        bounding_sphere.origin + glm::normalize(direction) * (bounding_sphere.radius + eps),
         bounding_sphere.origin,
         glm::vec3(0, 1, 0)
         ));
@@ -167,6 +167,10 @@ void Scene::render_sky() const {
     // Render the sky
     _sky_material.bind();
     _sky_material.set_uniform(HASH("intensity"), _ibl_intensity);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GEQUAL);
+
     draw_full_screen_triangle();
 }
 
@@ -180,7 +184,7 @@ void Scene::set_frame_buffer(TypedBuffer<shader::FrameData> &buffer) const {
     mapping[0].sun_color = _sun_color;
     mapping[0].sun_dir = glm::normalize(_sun_direction);
     mapping[0].ibl_intensity = _ibl_intensity;
-    mapping[0].sun_view_proj = get_sun_camera().view_proj_matrix();
+    mapping[0].sun_view_proj = get_depth_camera(nullptr, _sun_direction).view_proj_matrix();
     buffer.bind(BufferUsage::Uniform, 0);
 }
 
@@ -203,11 +207,6 @@ std::pair<std::vector<const SceneObject*>, std::vector<const SceneObject*>> Scen
     for(const SceneObject& obj : _objects) {
         if (obj.collide(camera)) {
             obj.material().is_opaque() ? opaque.emplace_back(&obj) : transparent.emplace_back(&obj);
-        }
-    }
-    for (const auto &obj : (* _ocean)) {
-        if (obj.collide(camera)) {
-            transparent.emplace_back(&obj);
         }
     }
     return std::make_pair(opaque, transparent);
@@ -237,7 +236,6 @@ void Scene::render_main(const PassType pass_type) const {
     set_frame_buffer(buffer);
     set_light(light_buffer);
     bind_envmap();
-    render_sky();
 
     auto [opaques, transparents] = get_opaque_transparent(_camera);
 
@@ -246,9 +244,18 @@ void Scene::render_main(const PassType pass_type) const {
         obj->render(pass_type);
     }
     glPopDebugGroup(); // Opaques
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean");
+    for(const SceneObject &obj : *_ocean) {
+        obj.render(PassType::ALPHA_LIGHT);
+    }
+    glPopDebugGroup(); // Opaques
+
+    render_sky();
+
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Transparents");
     for(const SceneObject* obj : transparents) {
-        obj->render(pass_type);
+        obj->render(PassType::ALPHA_LIGHT);
     }
     glPopDebugGroup(); // Transparents
 }
@@ -287,7 +294,7 @@ void Scene::render_depth(const PassType pass_type) const {
 
 void Scene::render_shadow([[maybe_unused]] const PassType pass_type) const {
     TypedBuffer<shader::FrameData> buffer(nullptr, 1);
-    const auto sun_camera = get_sun_camera();
+    const auto sun_camera = get_depth_camera(nullptr, _sun_direction);
 
     set_frame_buffer_shadow(buffer, sun_camera);
     auto [opaques, _] = get_opaque_transparent(sun_camera);
@@ -310,7 +317,7 @@ void Scene::render_sun_ibl([[maybe_unused]] const PassType pass_type) const {
     draw_full_screen_triangle(TEXTURE_FUNC_ADD);
 }
 
-void Scene::render_point_lights([[maybe_unused]] const PassType pass_type) const {
+void Scene::render_point_lights(const PassType pass_type) const {
     TypedBuffer<shader::FrameData> frame_data_buffer(nullptr, 1);
     TypedBuffer<shader::PointLight> point_light_buffer(nullptr, std::max(_point_lights.size(), static_cast<size_t>(1)));
 
@@ -333,6 +340,20 @@ void Scene::render_point_lights([[maybe_unused]] const PassType pass_type) const
             sphere->render(pass_type, i);
         }
     }
+}
+
+void Scene::render_ocean_depth([[maybe_unused]] const PassType pass_type) const {
+    TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+    const auto top_down_camera = get_depth_camera(nullptr);
+
+    set_frame_buffer_shadow(buffer, top_down_camera);
+    auto [opaques, _] = get_opaque_transparent(top_down_camera);
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Opaques");
+    for(const SceneObject *obj : opaques) {
+        obj->render(PassType::DEPTH);
+    }
+    glPopDebugGroup(); // Opaques
 }
 
 void Scene::render(const PassType pass_type) const {
@@ -360,6 +381,9 @@ void Scene::render(const PassType pass_type) const {
             break;
         case PassType::DEFAULT:
             render_main(pass_type);
+            break;
+        case PassType::OCEAN_DEPTH:
+            render_ocean_depth(pass_type);
             break;
     }
 }

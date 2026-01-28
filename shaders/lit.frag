@@ -42,6 +42,7 @@ layout(binding = 1) buffer PointLights {
 };
 
 uniform uint is_main;
+uniform float y_level;
 
 void main() {
     const vec3 normal_map = unpack_normal_map(texture(in_normal_texture, in_uv).xy);
@@ -92,7 +93,7 @@ void main() {
     }
 
 
-    out_color = vec4(acc, alpha);
+    out_color = vec4(acc * (1. / exp(max(y_level - in_position.y, 0.) * .1)), alpha);
 
 
 #ifdef DEBUG_NORMAL

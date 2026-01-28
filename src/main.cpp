@@ -282,8 +282,8 @@ void gui(ImGuiRenderer& imgui) {
         if(scene && ImGui::BeginMenu("Ocean parameter")) {
             ImGui::InputInt("Number of iteration", &ocean_iteration);
             ImGui::DragFloat("Tesselation level", &tesselation_level, 1.f, 0.f, 100.f, "%.1f");
-            ImGui::InputFloat("Minimum_panel_size", &ocean_size);
-            ImGui::InputFloat("Y level", &y_level);
+            ImGui::DragFloat("Minimum panel size", &ocean_size, .1f, 0.f, 100.f, "%.1f");
+            ImGui::DragFloat("Y level", &y_level);
 
             if (ocean_iteration < 0)
                 ocean_iteration = 0;
@@ -549,6 +549,10 @@ int main(int argc, char** argv) {
                 glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean Pass");
 
                 scene->add_ocean(ocean->get_ocean(scene->camera(), y_level, ocean_size, tesselation_level));
+
+                for (const auto &obj : scene->objects()) {
+                    obj.material().set_uniform("y_level", y_level);
+                }
 
                 glPopDebugGroup(); // Ocean Pass
             }

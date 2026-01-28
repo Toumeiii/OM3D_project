@@ -13,6 +13,7 @@ namespace OM3D {
             const auto ocean_texture = std::make_shared<Texture>(value);
             material->set_texture(0u, ocean_texture);
         }
+        material->set_texture(3u, default_black_texture());
         material->set_program(Program::from_files(
                 "ocean.frag",
                 "ocean.tese",
@@ -58,6 +59,10 @@ namespace OM3D {
             const float y_level,
             const float min_size,
             const float tesselation_level) {
+        if (_iteration == 0) {
+            _update_ocean = false;
+            *_result = std::vector<SceneObject>();
+        }
         if (_update_ocean) {
             _update_ocean = false;
             compute_ocean();
@@ -95,29 +100,29 @@ namespace OM3D {
                                 d[0],
                                 {0., 1., 0.},
                                 {0., 0.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                             Vertex {
                                 d[1],
                                 {0., 1., 0.},
                                 {0., 1.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                             Vertex {
                                 d[2],
                                 {0., 1., 0.,},
                                 {1., 1.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                             Vertex {
                                 d[3],
                                 {0., 1., 0.,},
                                 {1., 0.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                         },
                         { 0, 1, 2, 3 },

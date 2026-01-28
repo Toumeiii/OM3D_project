@@ -39,7 +39,7 @@ class Scene : NonMovable {
         void set_sun(float altitude, float azimuth, glm::vec3 color = glm::vec3(1.0f));
         void set_frame_buffer(TypedBuffer<shader::FrameData> &buffer) const;
 
-        Camera get_sun_camera(std::vector<const SceneObject*> *visible_objects = nullptr) const;
+        Camera get_depth_camera(std::vector<const SceneObject*> *visible_objects = nullptr, glm::vec3 direction = {0., 1., 0.}) const;
 
         void bind_envmap(int index = 4) const;
 
@@ -70,6 +70,7 @@ class Scene : NonMovable {
         void render_shadow(PassType pass_type) const;
         void render_sun_ibl(PassType pass_type) const;
         void render_point_lights(PassType pass_type) const;
+        void render_ocean_depth(PassType pass_type) const;
         void render_alpha_lights(PassType pass_type) const;
 };
 
