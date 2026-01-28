@@ -5,11 +5,12 @@
 #ifndef OM3D_SQUARE_HH
 #define OM3D_SQUARE_HH
 
-#include "SceneObject.h"
+#include "Waves.h"
 
 namespace OM3D {
     class Ocean {
     private:
+        mutable Waves _waves_generator;
         std::shared_ptr<Material> _material;
         const Vertex _model_vertices[4] = {
             Vertex{
