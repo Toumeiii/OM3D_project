@@ -1,119 +1,73 @@
 #version 450
 
-#define RANDOM_SCALE vec4(443.897, 441.423, .0973, .1099)
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 0, rgba16f) uniform image2D displacement;    // Displacement
+layout(binding = 1, rgba16f) uniform image2D jacobian;    // Jacobian
+
+layout(binding = 2, rgba16f) uniform image2D h0k;
+
+const float PI = 3.14159265359;
+const float G = 9.81;
 
 uniform float time;
 uniform float octave;
 
-const vec2 wind_direction = normalize(vec2(1.0, 1.0));
-const float amplitude = 0.0005;
-
-
-layout(rgba16f, binding = 0) uniform image2D previous_wave_derivate;
-layout(rgba16f, binding = 1) uniform image2D wave;
-layout(rgba16f, binding = 2) uniform image2D wave_derivate;
-
-const float PI = 3.14159265359;
-const float G = 9.8; // Gravity (m/s**2)
-
-float phillips_spectrum(vec2 k){
-    float k_length = length(k);
-    if (k_length < 1e-6) return 0.0;
-
-    float k_length_2 = k_length * k_length;
-    float k_length_4 = k_length_2 * k_length_2;
-
-    float k_dot_w = dot(normalize(k), normalize(wind_direction));
-    float k_dot_w_2 = k_dot_w * k_dot_w;
-
-    float w_length = wind_direction.length();
-    float L = (w_length * w_length) / G;
-    float L2 = L * L;
-
-    float damping = 0.001;
-    float l2 = L2 * damping * damping;
-
-    return amplitude * exp(-1.0 / (k_length_2 * L2)) / k_length_4 * k_dot_w_2 * exp(-k_length_2 * l2);
+vec2 iMult(vec2 a, vec2 b) {
+    return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
-vec2 random2(float p) {
-    vec3 p3 = fract(vec3(p) * RANDOM_SCALE.xyz);
-    p3 += dot(p3, p3.yzx + 19.19);
-    return fract((p3.xx + p3.yz) * p3.zy);
-}
-
-vec2 gaussian(float seed) {
-    vec2 u = random2(seed);
-    float r = sqrt(-2.0 * log(u.x));
-    float t = 6.2831853 * u.y;
-    return vec2(r * cos(t), r * sin(t));
-}
-
-float dispersion(vec2 k){
-    float w = sqrt(G * length(k));
-    return floor(w / (2.0 * PI / time)) * (2.0 * PI / time);
-}
-
-vec2 conjugate(vec2 c){
+vec2 conjugate(vec2 c) {
     return vec2(c.x, -c.y);
 }
 
-vec2 iMult(vec2 a, vec2 b) { 
-    return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
-}
-
-layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-void main(){
-    uvec2 p = gl_GlobalInvocationID.xy;
-    uint size = imageSize(wave).x;
-
-    if (p.x >= size || p.y >= size)
+void main() {
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+    uint size = imageSize(h0k).x;
+    
+    if (uv.x >= size || uv.y >= size)
         return;
-
-    int xi = (p.x < size / 2.0) ? int(p.x) : int(p.x) - int(size);
-    int yi = (p.y < size / 2.0) ? int(p.y) : int(p.y) - int(size);
+    
+    vec2 x = vec2(uv) - float(size) / 2.0;
 
     float wave_size = 2048.0 / pow(2.0, octave);
-    float kx = float(xi) * (2.0 * PI / wave_size);
-    float ky = float(yi) * (2.0 * PI / wave_size);
-    vec2 k = vec2(kx, ky);
-    vec2 k_minus = -k;
-
-    vec2 rg = gaussian(float(p.x + p.y * size));
-
-    float P = phillips_spectrum(k);
-    float P_minus = phillips_spectrum(k_minus);
-
-    vec2 h0 = rg * sqrt(P / 2.0);
-    vec2 h0_minus = rg * sqrt(P_minus / 2.0);
-
-    float w = dispersion(k);
-
-    vec2 h0_minus_conj = conjugate(h0_minus);
-
-    vec2 exp_iwt = vec2(cos(w * time), sin(w * time));
-    vec2 exp_minus_iwt = vec2(cos(-w * time), sin(-w * time));
-
-    vec2 h_t = iMult(h0, exp_iwt) + iMult(h0_minus_conj, exp_minus_iwt);
-
-    vec2 Dx = vec2(0.0);
-    vec2 Dz = vec2(0.0);
-    if (length(k) > 0.0) { 
-        vec2 k_norm = k / length(k); 
-        vec2 i_h = vec2(-h_t.y, h_t.x);
-        Dx = i_h * k_norm.x;
-        Dz = i_h * k_norm.y;
+    vec2 k = 2.0 * PI * x / wave_size;
+    float k_length = length(k);
+    
+    if (k_length < 1e-4) {
+        imageStore(displacement, uv, vec4(0.0));
+        imageStore(jacobian, uv, vec4(0.0));
+        return;
     }
-
-    vec2 x = Dx;
-    vec2 z = Dz;
-    if (octave != 0.0) {
-        vec4 wave = imageLoad(previous_wave_derivate, ivec2(p));
-        x += wave.xy;
-        z += wave.zw;
-    }
-    float j = (1.0 + 0.5 * x.x) * (1.0 + 0.5 * z.x) - 0.5 * x.y * z.y;
-
-    imageStore(wave, ivec2(p), vec4(Dx.x, h_t.x, Dz.x, j));
-    imageStore(wave_derivate, ivec2(p), vec4(x.x, x.y, z.x,z.y));
+    
+    float w = sqrt(G * k_length);
+    
+    vec4 h0 = imageLoad(h0k, uv);
+    vec2 h0_k = h0.xy;
+    vec2 h0_minus_k = h0.zw;
+    
+    // Compute h(k,t)
+    float coswt = cos(w * time);
+    float sinwt = sin(w * time);
+    vec2 exp_plus = vec2(coswt, sinwt);
+    vec2 exp_minus = vec2(coswt, -sinwt);
+    
+    // Dy
+    vec2 h_t = iMult(h0_k, exp_plus) + iMult(conjugate(h0_minus_k), exp_minus);
+    
+    
+    // Dx, Dz
+    vec2 k_norm = k / k_length;
+    vec2 dx = iMult(vec2(0.0, -k_norm.x), h_t);
+    vec2 dz = iMult(vec2(0.0, -k_norm.y), h_t);
+    
+    imageStore(displacement, uv, vec4(dx.x, h_t.x, dz.x,0.0));
+    
+    // Jacobian
+    vec2 Jxx = iMult(vec2(0.0, k.x * k_norm.x), h_t);
+    vec2 Jzz = iMult(vec2(0.0, k.y * k_norm.y), h_t);
+    vec2 Jxz = iMult(vec2(0.0, k.x * k_norm.y), h_t);
+    vec2 Jzx = iMult(vec2(0.0, k.y * k_norm.x), h_t);
+    
+    imageStore(jacobian, uv, vec4(Jxx.x, Jzz.x, Jxz.x, Jzx.x));
 }

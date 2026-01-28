@@ -28,6 +28,7 @@ layout(binding = 0) uniform Data {
 };
 
 layout (binding = 6)uniform sampler2D waves[4];
+layout (binding = 10)uniform sampler2D jacobien[4];
 
 const float m = 0.4; // foam threshold
 const float k = 2.0; // foam gain
@@ -49,15 +50,15 @@ void main() {
 
     int octave = 4 - int(clamp(length(frame.camera.position - p.xyz) / 100., 0., 3.));
     vec3 mouvement = vec3(0.0, 0.0, 0.0);
-    float j = 0.0;
+    vec4 jac = vec4(0.0, 0.0, 0.0, 0.0);
     for (int i = 0; i < octave; i++) {
-        vec4 waves = texture(waves[i], out_uv);
-        mouvement += waves.xyz;
-        j = waves.w;
+        mouvement += texture(waves[i], out_uv).xyz;
+        jac += texture(jacobien[i], out_uv);
     }
-    out_position *= mouvement;
+    out_position = p.xyz + mouvement;
+    float j = (1.0 + jac.x) * (1.0 + jac.y) - jac.z * jac.w;
 
-    out_color = mix(vec3(0., 0., 1.0), vec3(1.0, 1.0, 1.0), clamp(k * (m - j), 0.0, 1.0));
+    out_color = mix(vec3(0.1, 0.3, 0.8), vec3(1.0, 1.0, 1.0), clamp(k * smoothstep(m + 0.1, m - 0.1, j), 0.0, 1.0));
 
-    gl_Position = frame.camera.view_proj * p;
+    gl_Position = frame.camera.view_proj * vec4(out_position, 1.0);
 }

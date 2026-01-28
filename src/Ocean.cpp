@@ -51,10 +51,12 @@ namespace OM3D {
             });
             obj.material().set_uniform(HASH("tesselation_level"), tesselation_level);
         }
-        std::vector<Texture> wave_textures = _waves_generator.get_waves();
 
-        for (size_t i = 0; i < wave_textures.size() && i < 4; ++i) {
-            _material->set_texture(6 + static_cast<u32>(i), std::make_shared<Texture>(std::move(wave_textures[i])));
+        std::vector<Texture> textures = _waves_generator.get_waves();
+
+        for (size_t i = 0; i < textures.size() && i < 4; ++i) {
+            _material->set_texture(6 + static_cast<u32>(i), std::make_shared<Texture>(std::move(textures[i * 2])));
+            _material->set_texture(10 + static_cast<u32>(i), std::make_shared<Texture>(std::move(textures[i * 2 + 1])));
         }
         return _result;
     }
