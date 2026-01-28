@@ -28,7 +28,8 @@ void SceneObject::render(const PassType pass_type, const size_t i) const {
             _material->set_stored_uniform(HASH("index"), static_cast<glm::u32>(i));
             break;
         case PassType::ALPHA_LIGHT:
-            _material->set_depth_test_mode(DepthTestMode::None);
+            _material->set_depth_test_mode(DepthTestMode::Standard);
+            _material->set_blend_mode(BlendMode::Alpha);
             break;
         default:
             _material->set_depth_test_mode(DepthTestMode::Equal);

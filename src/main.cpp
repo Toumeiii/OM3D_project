@@ -282,8 +282,8 @@ void gui(ImGuiRenderer& imgui) {
         if(scene && ImGui::BeginMenu("Ocean parameter")) {
             ImGui::InputInt("Number of iteration", &ocean_iteration);
             ImGui::DragFloat("Tesselation level", &tesselation_level, 1.f, 0.f, 100.f, "%.1f");
-            ImGui::InputFloat("Minimum_panel_size", &ocean_size);
-            ImGui::InputFloat("Y level", &y_level);
+            ImGui::DragFloat("Minimum panel size", &ocean_size, .1f, 0.f, 100.f, "%.1f");
+            ImGui::DragFloat("Y level", &y_level);
 
             if (ocean_iteration < 0)
                 ocean_iteration = 0;
@@ -449,14 +449,16 @@ struct RendererState {
             state.shadow_texture = Texture(glm::uvec2(2048,2048), ImageFormat::Depth32_FLOAT, WrapMode::Clamp, TEXTURE_FLAG_COMPARE | TEXTURE_FLAG_LINEAR);
             state.albedo_roughness_texture = Texture(size, ImageFormat::RGBA8_sRGB, WrapMode::Clamp);
             state.normal_metalness_texture = Texture(size, ImageFormat::RGBA8_UNORM, WrapMode::Clamp);
+            state.position_texture = Texture(size, ImageFormat::RGBA16_FLOAT, WrapMode::Clamp);
 
-            state.main_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture});
+            state.main_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture, &state.position_texture});
             state.tone_map_framebuffer = Framebuffer(nullptr, std::array{&state.tone_mapped_texture});
             state.depth_framebuffer = Framebuffer(&state.depth_texture);
             state.shadow_framebuffer = Framebuffer(&state.shadow_texture);
             state.deferred_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture, &state.albedo_roughness_texture, &state.normal_metalness_texture});
             state.debug_framebuffer = Framebuffer(nullptr, std::array{&state.tone_mapped_texture});
             state.sun_ibl_framebuffer = Framebuffer(nullptr, std::array{&state.lit_hdr_texture});
+            state.ocean_framebuffer = Framebuffer(&state.depth_texture, std::array{&state.lit_hdr_texture});
         }
 
         return state;
@@ -471,6 +473,7 @@ struct RendererState {
     Texture albedo_roughness_texture;
     Texture normal_metalness_texture;
     Texture sun_texture;
+    Texture position_texture;
 
     Framebuffer main_framebuffer;
     Framebuffer tone_map_framebuffer;
@@ -479,6 +482,7 @@ struct RendererState {
     Framebuffer deferred_framebuffer;
     Framebuffer debug_framebuffer;
     Framebuffer sun_ibl_framebuffer;
+    Framebuffer ocean_framebuffer;
 };
 
 
@@ -545,12 +549,16 @@ int main(int argc, char** argv) {
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Frame");
 
             {
-                PROFILE_GPU("Ocean Pass");
-                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean Pass");
+                PROFILE_GPU("Ocean Compute");
+                glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean Compute");
 
                 scene->add_ocean(ocean->get_ocean(scene->camera(), y_level, ocean_size, tesselation_level));
 
-                glPopDebugGroup(); // Ocean Pass
+                for (const auto &obj : scene->objects()) {
+                    obj.material().set_uniform("y_level", y_level);
+                }
+
+                glPopDebugGroup(); // Ocean Compute
             }
 
             if (current_state == states[6]) {
@@ -564,6 +572,18 @@ int main(int argc, char** argv) {
                     scene->render(PassType::MAIN);
 
                     glPopDebugGroup();  // Main Pass
+                }
+
+                {
+                    PROFILE_GPU("Ocean Pass");
+                    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean Pass");
+
+                    renderer.ocean_framebuffer.bind(false, false);
+                    renderer.position_texture.bind(14);
+
+                    scene->render(PassType::OCEAN);
+
+                    glPopDebugGroup();  // Ocean Pass
                 }
             } else {
                 {

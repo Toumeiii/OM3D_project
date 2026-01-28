@@ -13,6 +13,7 @@ namespace OM3D {
             const auto ocean_texture = std::make_shared<Texture>(value);
             material->set_texture(0u, ocean_texture);
         }
+        material->set_texture(3u, default_black_texture());
         material->set_program(Program::from_files(
                 "ocean.frag",
                 "ocean.tese",
@@ -26,6 +27,7 @@ namespace OM3D {
         material->set_stored_uniform(HASH("metal_rough_factor"), glm::vec2(1., 1.));
         material->set_stored_uniform(HASH("emissive_factor"), glm::vec3(1., 1., 1.));
         _material = material;
+        _waves_generator = Waves();
     }
 
     void Ocean::set_iteration(const size_t iteration) {
@@ -41,14 +43,24 @@ namespace OM3D {
             const float min_size,
             const float tesselation_level) const {
         const float y_dist = 1.f + glm::abs(camera.position().y - y_level);
+        const float tile_size = min_size * y_dist;
+        glm::vec2 xz = {camera.position().x, camera.position().z};
+        xz = glm::floor(xz / tile_size) * tile_size;
         for (auto &obj : *_result) {
             obj.set_transform({
-                min_size * y_dist, 0., 0., 0.,
-                0., y_dist, 0., 0.,
-                0., 0., min_size * y_dist, 0.,
-                camera.position().x, y_level, camera.position().z, 1.,
+                tile_size, 0., 0., 0.,
+                0., 1, 0., 0.,
+                0., 0., tile_size, 0.,
+                xz.x, y_level, xz.y, 1.,
             });
             obj.material().set_uniform(HASH("tesselation_level"), tesselation_level);
+        }
+
+        std::vector<Texture> textures = _waves_generator.get_waves();
+
+        for (size_t i = 0; i < textures.size() && i < 4; ++i) {
+            _material->set_texture(6 + static_cast<u32>(i), std::make_shared<Texture>(std::move(textures[i * 2])));
+            _material->set_texture(10 + static_cast<u32>(i), std::make_shared<Texture>(std::move(textures[i * 2 + 1])));
         }
         return _result;
     }
@@ -58,6 +70,10 @@ namespace OM3D {
             const float y_level,
             const float min_size,
             const float tesselation_level) {
+        if (_iteration == 0) {
+            _update_ocean = false;
+            *_result = std::vector<SceneObject>();
+        }
         if (_update_ocean) {
             _update_ocean = false;
             compute_ocean();
@@ -95,29 +111,29 @@ namespace OM3D {
                                 d[0],
                                 {0., 1., 0.},
                                 {0., 0.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                             Vertex {
                                 d[1],
                                 {0., 1., 0.},
                                 {0., 1.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                             Vertex {
                                 d[2],
                                 {0., 1., 0.,},
                                 {1., 1.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                             Vertex {
                                 d[3],
                                 {0., 1., 0.,},
                                 {1., 0.},
-                                {1.0f, 0.0f, 0.0f, 0.0f},
-                                {1., 1., 1.},
+                                {1.0f, 0.0f, 0.0f, -1.0f},
+                                { 1., 1., 1. },
                             },
                         },
                         { 0, 1, 2, 3 },

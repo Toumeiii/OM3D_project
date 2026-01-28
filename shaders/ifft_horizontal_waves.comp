@@ -1,0 +1,72 @@
+#version 450
+
+layout(local_size_x = 1, local_size_y = 16) in;
+
+layout(binding = 0, rgba16f) uniform image2D waves_real;
+layout(binding = 1, rgba16f) uniform image2D waves_img;
+layout(binding = 2, rgba16f) uniform image2D tmp_real;
+layout(binding = 3, rgba16f) uniform image2D tmp_img;
+
+const float PI = 3.14159265359;
+
+vec3 cmul_real(vec3 ar, vec3 ai, vec2 w) {
+    return ar * w.x - ai * w.y;
+}
+
+vec3 cmul_imag(vec3 ar, vec3 ai, vec2 w) {
+    return ar * w.y + ai * w.x;
+}
+
+void main(){
+    int y = int(gl_GlobalInvocationID.y);
+    int size = imageSize(waves_real).x;
+
+    vec3 real_row[512];
+    vec3 img_row[512];
+
+
+    for (int x = 0; x < size; x++) {
+        vec4 r = imageLoad(waves_real, ivec2(x, y));
+        vec4 i = imageLoad(waves_img, ivec2(x, y));
+        real_row[x] = r.rgb;
+        img_row[x] = i.rgb;
+    }
+
+    for (int s = 1; s <= int(log2(size)); s++) {
+        int m = 1 << s;
+        int m2 = m >> 1;
+        float theta = 2.0 * PI / float(m);
+
+        for (int k = 0; k < size; k += m) {
+
+            for (int j = 0; j < m2; j++) {
+                float ang = theta * float(j);
+                vec2 w = vec2(cos(ang), sin(ang));
+
+                int i1 = k + j;
+                int i2 = k + j + m2;
+
+                vec3 ar = real_row[i2];
+                vec3 ai = img_row[i2];
+
+                vec3 tr = cmul_real(ar, ai, w);
+                vec3 ti = cmul_imag(ar, ai, w);
+
+                vec3 ur = real_row[i1];
+                vec3 ui = img_row[i1];
+
+                real_row[i1] = ur + tr;
+                real_row[i1] = ui + ti;
+                real_row[i2] = ur - tr;
+                img_row[i2] = ui - ti;
+            } 
+        }
+    }
+    for (int x = 0; x < size; x++) {
+        real_row[x] /= float(size);
+        img_row[x] /= float(size);
+
+        imageStore(tmp_real, ivec2(x, y), vec4(real_row[x], 1.0));
+        imageStore(tmp_img, ivec2(x, y), vec4(img_row[x], 1.0)); 
+    } 
+}

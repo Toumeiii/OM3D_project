@@ -1,0 +1,76 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 0, rgba16f) uniform image2D displacement;    // Displacement
+layout(binding = 3, rgba16f) uniform image2D displacement_img; // Displacement
+layout(binding = 1, rgba16f) uniform image2D jacobian;    // Jacobian
+
+layout(binding = 2, rgba16f) uniform image2D h0k;
+
+const float PI = 3.14159265359;
+const float G = 9.81;
+
+uniform float time;
+uniform float octave;
+
+vec2 iMult(vec2 a, vec2 b) {
+    return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+vec2 conjugate(vec2 c) {
+    return vec2(c.x, -c.y);
+}
+
+void main() {
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+    uint size = imageSize(h0k).x;
+    
+    if (uv.x >= size || uv.y >= size)
+        return;
+    
+    vec2 x = vec2(uv) - float(size) / 2.0;
+
+    float wave_size = 2048.0 / pow(2.0, octave);
+    vec2 k = 2.0 * PI * x / wave_size;
+    float k_length = length(k);
+    
+    if (k_length < 1e-4) {
+        imageStore(displacement, uv, vec4(0.0));
+        imageStore(displacement_img, uv, vec4(0.0));
+        imageStore(jacobian, uv, vec4(0.0));
+        return;
+    }
+    
+    float w = sqrt(G * k_length);
+    
+    vec4 h0 = imageLoad(h0k, uv);
+    vec2 h0_k = h0.xy;
+    vec2 h0_minus_k = h0.zw;
+    
+    // Compute h(k,t)
+    float coswt = cos(w * time);
+    float sinwt = sin(w * time);
+    vec2 exp_plus = vec2(coswt, sinwt);
+    vec2 exp_minus = vec2(coswt, -sinwt);
+    
+    // Dy
+    vec2 h_t = iMult(h0_k, exp_plus) + iMult(conjugate(h0_minus_k), exp_minus);
+    
+    
+    // Dx, Dz
+    vec2 k_norm = k / k_length;
+    vec2 dx = iMult(vec2(0.0, -k_norm.x), h_t);
+    vec2 dz = iMult(vec2(0.0, -k_norm.y), h_t);
+    
+    imageStore(displacement, uv, vec4(dx.x, h_t.x, dz.x,0.0));
+    imageStore(displacement_img, uv, vec4(dx.y, h_t.y, dz.y,0.0));
+    
+    // Jacobian
+    vec2 Jxx = iMult(vec2(0.0, k.x * k_norm.x), h_t);
+    vec2 Jzz = iMult(vec2(0.0, k.y * k_norm.y), h_t);
+    vec2 Jxz = iMult(vec2(0.0, k.x * k_norm.y), h_t);
+    vec2 Jzx = iMult(vec2(0.0, k.y * k_norm.x), h_t);
+    
+    imageStore(jacobian, uv, vec4(Jxx.x, Jzz.x, Jxz.x, Jzx.x));
+}

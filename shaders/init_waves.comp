@@ -1,0 +1,83 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, rgba16f) uniform image2D h0k;
+
+uniform float octave;
+
+const float wind_speed = 10.0;
+const vec2 wind_direction = normalize(vec2(1.0, 1.0));
+const float amplitude = 0.0005;
+
+const float PI = 3.14159265359;
+const float G = 9.8; // Gravity (m/s**2)
+
+float phillips_spectrum(vec2 k) {
+    float k_length = length(k);
+    if (k_length < 0.0001) return 0.0;
+    
+    float k_length_2 = k_length * k_length;
+    float k_length_4 = k_length_2 * k_length_2;
+    
+    float speed_2 = wind_speed * wind_speed;
+    float L = speed_2 / G;
+    float L2 = L * L;
+    
+    vec2 k_norm = k / k_length;
+    float k_dot_w = dot(k_norm, wind_direction);
+    float k_dot_w_2 = k_dot_w * k_dot_w;
+    
+    if (k_dot_w < 0.0) k_dot_w_2 *= 0.07;
+    
+    float l = L* 0.001;
+
+    // Phillips spectrum
+    return amplitude * exp(-1.0 / (k_length_2 * L2)) / k_length_4 * k_dot_w_2 * exp(-k_length_2 * l * l);
+}
+
+uint hash(uint seed) {
+    uint state = seed * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float random(uint seed) {
+    seed = hash(seed);
+    return float(seed) / 4294967296.0;
+}
+
+vec2 gaussianRandom(uint seed) {
+    float u1 = random(seed);
+    float u2 = random(seed);
+    float r = sqrt(-2.0 * log(u1));
+    float t = 2.0 * PI * u2;
+    return vec2(r * cos(t), r * sin(t));
+}
+
+void main() {
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+    uint size = imageSize(h0k).x;
+    
+    if (uv.x >= size || uv.y >= size)
+        return;
+    
+    vec2 x = vec2(uv) - float(size) / 2.0;
+
+    float wave_size = 2048.0 / pow(2.0, octave);
+    vec2 k = 2.0 * PI * x / wave_size;
+    
+    vec2 rg = gaussianRandom(uint(uv.x * size + uv.y));
+    
+    // h0 k
+    float P = phillips_spectrum(k);
+    vec2 h0 = rg * sqrt(P / 2.0);
+    
+    // h0 -k
+    vec2 k_minus = -k;
+    float P_minus = phillips_spectrum(k_minus);
+    vec2 h0_minus = rg * sqrt(P_minus / 2.0);
+    
+    // Store in h0k image
+    imageStore(h0k, uv, vec4(h0.x, h0.y, h0_minus.x, h0_minus.y));
+}
