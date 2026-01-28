@@ -6,9 +6,9 @@ layout(binding = 0, rgba16f) uniform image2D h0k;
 
 uniform float octave;
 
-const float wind_speed = 10.0;
+const float wind_speed = 100.0;
 const vec2 wind_direction = normalize(vec2(1.0, 1.0));
-const float amplitude = 0.0005;
+const float amplitude = 0.0001;
 
 const float PI = 3.14159265359;
 const float G = 9.8; // Gravity (m/s**2)
@@ -64,7 +64,7 @@ void main() {
     
     vec2 x = vec2(uv) - float(size) / 2.0;
 
-    float wave_size = 2048.0 / pow(2.0, octave);
+    float wave_size = 8192.0 / pow(2.0, octave);
     vec2 k = 2.0 * PI * x / wave_size;
     
     vec2 rg = gaussianRandom(uint(uv.x * size + uv.y));

@@ -3,10 +3,10 @@
 layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0, rgba16f) uniform image2D displacement;    // Displacement
-layout(binding = 3, rgba16f) uniform image2D displacement_img; // Displacement
-layout(binding = 1, rgba16f) uniform image2D jacobian;    // Jacobian
+layout(binding = 1, rgba16f) uniform image2D displacement_img; // Displacement
+layout(binding = 2, rgba16f) uniform image2D jacobian;    // Jacobian
 
-layout(binding = 2, rgba16f) uniform image2D h0k;
+layout(binding = 3, rgba16f) uniform image2D h0k;
 
 const float PI = 3.14159265359;
 const float G = 9.81;

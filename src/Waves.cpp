@@ -44,14 +44,14 @@ namespace OM3D {
             
             // bind textures
             wave.bind_as_image(0, AccessType::WriteOnly);
-            wave_img.bind_as_image(3, AccessType::WriteOnly);
-            jacobien.bind_as_image(1, AccessType::WriteOnly);
-            _init_waves_textures[i].bind_as_image(2, AccessType::ReadOnly);
+            wave_img.bind_as_image(1, AccessType::WriteOnly);
+            jacobien.bind_as_image(2, AccessType::WriteOnly);
+            _init_waves_textures[i].bind_as_image(3, AccessType::ReadOnly);
             
             glDispatchCompute(_size / 16, _size / 16, 1);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-            Textures.push_back(std::move(wave));
+            Textures.push_back(std::move(IFFT(wave, wave_img)));
             Textures.push_back(std::move(jacobien));
         }
         _time += 0.03f;
@@ -69,18 +69,20 @@ namespace OM3D {
         tmp_real.bind_as_image(2, AccessType::WriteOnly);
         tmp_img.bind_as_image(3, AccessType::WriteOnly);
 
-        glDispatchCompute(1, _size / 16, 1);
+        glDispatchCompute(1, (_size + 15) / 16, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         Texture result_real( glm::uvec2(_size, _size), ImageFormat::RGBA16_FLOAT, WrapMode::Repeat);
+        Texture result_img( glm::uvec2(_size, _size), ImageFormat::RGBA16_FLOAT, WrapMode::Repeat);
 
         _ifft_v->bind();
 
         tmp_real.bind_as_image(0, AccessType::ReadOnly);
         tmp_img.bind_as_image(1, AccessType::ReadOnly);
         result_real.bind_as_image(2, AccessType::WriteOnly);
+        result_img.bind_as_image(3, AccessType::WriteOnly);
 
-        glDispatchCompute(_size / 16, 1, 1);
+        glDispatchCompute((_size + 15) / 16, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         return result_real;
