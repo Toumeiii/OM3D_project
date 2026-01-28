@@ -579,7 +579,7 @@ int main(int argc, char** argv) {
                     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean Pass");
 
                     renderer.ocean_framebuffer.bind(false, false);
-                    renderer.position_texture.bind(7);
+                    renderer.position_texture.bind(14);
 
                     scene->render(PassType::OCEAN);
 

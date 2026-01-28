@@ -43,12 +43,15 @@ namespace OM3D {
             const float min_size,
             const float tesselation_level) const {
         const float y_dist = 1.f + glm::abs(camera.position().y - y_level);
+        const float tile_size = min_size * y_dist;
+        glm::vec2 xz = {camera.position().x, camera.position().z};
+        xz = glm::floor(xz / tile_size) * tile_size;
         for (auto &obj : *_result) {
             obj.set_transform({
-                min_size * y_dist, 0., 0., 0.,
-                0., y_dist, 0., 0.,
-                0., 0., min_size * y_dist, 0.,
-                camera.position().x, y_level, camera.position().z, 1.,
+                tile_size, 0., 0., 0.,
+                0., 1, 0., 0.,
+                0., 0., tile_size, 0.,
+                xz.x, y_level, xz.y, 1.,
             });
             obj.material().set_uniform(HASH("tesselation_level"), tesselation_level);
         }
