@@ -11,6 +11,7 @@
 // #define DEBUG_ENV
 
 layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_position;
 
 layout(location = 0) in vec3 in_normal;
 layout(location = 1) in vec2 in_uv;
@@ -93,6 +94,7 @@ void main() {
 
 
     out_color = vec4(acc, alpha);
+    out_position = vec4(in_position, 1.);
 
 
 #ifdef DEBUG_NORMAL

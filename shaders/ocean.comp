@@ -100,6 +100,6 @@ void main() {
             vertices[index] = first_layer[gl_GlobalInvocationID.x];
     } else {
         uint index = (gl_GlobalInvocationID.y * 48 - 32) + gl_GlobalInvocationID.x;
-        vertices[index] = other_layer[gl_GlobalInvocationID.x] * pow(2, float(gl_GlobalInvocationID.y));
+        vertices[index] = other_layer[gl_GlobalInvocationID.x] * pow(2, float(gl_GlobalInvocationID.y) * 0.9);
     }
 }
