@@ -14,7 +14,7 @@ enum class PassType {
     SUN_IBL,
     POINT_LIGHT,
     ALPHA_LIGHT,
-    OCEAN_DEPTH,
+    OCEAN,
 };
 
 #endif //OM3D_PASSTYPE_HH

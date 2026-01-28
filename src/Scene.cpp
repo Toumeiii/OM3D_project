@@ -109,7 +109,7 @@ Camera Scene::get_depth_camera(std::vector<const SceneObject*> *visible_objects,
     cam.set_view(glm::lookAt(
         bounding_sphere.origin + glm::normalize(direction) * (bounding_sphere.radius + eps),
         bounding_sphere.origin,
-        glm::vec3(0, 1, 0)
+        direction != glm::vec3{0., 1., 0.} ? glm::vec3(0, 1, 0) : glm::vec3(0, 0, 1)
         ));
 
     return cam;
@@ -245,12 +245,6 @@ void Scene::render_main(const PassType pass_type) const {
     }
     glPopDebugGroup(); // Opaques
 
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean");
-    for(const SceneObject &obj : *_ocean) {
-        obj.render(PassType::ALPHA_LIGHT);
-    }
-    glPopDebugGroup(); // Opaques
-
     render_sky();
 
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Transparents");
@@ -342,18 +336,22 @@ void Scene::render_point_lights(const PassType pass_type) const {
     }
 }
 
-void Scene::render_ocean_depth([[maybe_unused]] const PassType pass_type) const {
-    TypedBuffer<shader::FrameData> buffer(nullptr, 1);
-    const auto top_down_camera = get_depth_camera(nullptr);
+void Scene::render_ocean([[maybe_unused]] const PassType pass_type) const {
+    TypedBuffer<shader::FrameData> frame_data_buffer(nullptr, 1);
+    TypedBuffer<shader::PointLight> point_light_buffer(nullptr, std::max(_point_lights.size(), static_cast<size_t>(1)));
 
-    set_frame_buffer_shadow(buffer, top_down_camera);
-    auto [opaques, _] = get_opaque_transparent(top_down_camera);
+    bind_envmap();
+    bind_brdf();
 
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Opaques");
-    for(const SceneObject *obj : opaques) {
-        obj->render(PassType::DEPTH);
+    set_frame_buffer(frame_data_buffer);
+    set_light(point_light_buffer);
+
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Ocean");
+    for(const SceneObject &obj : *_ocean) {
+        obj.render(PassType::ALPHA_LIGHT);
     }
-    glPopDebugGroup(); // Opaques
+    glPopDebugGroup(); // Ocean
 }
 
 void Scene::render(const PassType pass_type) const {
@@ -382,8 +380,8 @@ void Scene::render(const PassType pass_type) const {
         case PassType::DEFAULT:
             render_main(pass_type);
             break;
-        case PassType::OCEAN_DEPTH:
-            render_ocean_depth(pass_type);
+        case PassType::OCEAN:
+            render_ocean(pass_type);
             break;
     }
 }

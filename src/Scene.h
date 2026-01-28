@@ -70,7 +70,7 @@ class Scene : NonMovable {
         void render_shadow(PassType pass_type) const;
         void render_sun_ibl(PassType pass_type) const;
         void render_point_lights(PassType pass_type) const;
-        void render_ocean_depth(PassType pass_type) const;
+        void render_ocean(PassType pass_type) const;
         void render_alpha_lights(PassType pass_type) const;
 };
 

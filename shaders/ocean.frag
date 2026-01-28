@@ -28,6 +28,8 @@ uniform float alpha_cutoff;
 layout(binding = 4) uniform samplerCube in_envmap;
 layout(binding = 5) uniform sampler2D brdf_lut;
 
+layout(binding = 7) uniform sampler2D in_object_position;
+
 layout(binding = 0) uniform Data {
     FrameData frame;
 };
@@ -44,7 +46,13 @@ void main() {
 
     const vec4 albedo_tex = texture(in_texture, in_uv);
     const vec3 base_color = in_color.rgb * albedo_tex.rgb * base_color_factor;
-    const float alpha = albedo_tex.a;
+    float alpha = albedo_tex.a;
+    vec4 obj_pos = texelFetch(in_object_position, ivec2(gl_FragCoord.xy), 0);
+    if (obj_pos.w == 0.) {
+        alpha = 1.;
+    } else {
+        alpha = 1.0f - exp(min((obj_pos.y - in_position.y), 0.) * 2.);
+    }
 
     #ifdef ALPHA_TEST
     if(alpha <= alpha_cutoff) {

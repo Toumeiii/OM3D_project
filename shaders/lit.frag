@@ -11,6 +11,7 @@
 // #define DEBUG_ENV
 
 layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_position;
 
 layout(location = 0) in vec3 in_normal;
 layout(location = 1) in vec2 in_uv;
@@ -42,7 +43,6 @@ layout(binding = 1) buffer PointLights {
 };
 
 uniform uint is_main;
-uniform float y_level;
 
 void main() {
     const vec3 normal_map = unpack_normal_map(texture(in_normal_texture, in_uv).xy);
@@ -93,7 +93,8 @@ void main() {
     }
 
 
-    out_color = vec4(acc * (1. / exp(max(y_level - in_position.y, 0.) * .1)), alpha);
+    out_color = vec4(acc, alpha);
+    out_position = vec4(in_position, 1.);
 
 
 #ifdef DEBUG_NORMAL
