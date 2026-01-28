@@ -80,7 +80,7 @@ namespace OM3D {
         tmp_real.bind_as_image(0, AccessType::ReadOnly);
         tmp_img.bind_as_image(1, AccessType::ReadOnly);
         result_real.bind_as_image(2, AccessType::WriteOnly);
-        result_img.bind_as_image(3, AccessType::WriteOnly);
+        // result_img.bind_as_image(3, AccessType::WriteOnly);
 
         glDispatchCompute((_size + 15) / 16, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);

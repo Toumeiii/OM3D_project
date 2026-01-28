@@ -5,7 +5,7 @@ layout(local_size_x = 16, local_size_y = 1) in;
 layout(binding = 0, rgba16f) uniform image2D tmp_real;
 layout(binding = 1, rgba16f) uniform image2D tmp_img;
 layout(binding = 2, rgba16f) uniform image2D result_real;
-layout(binding = 3, rgba16f) uniform image2D result_img;
+// layout(binding = 3, rgba16f) uniform image2D result_img;
 
 const float PI = 3.14159265359;
 
@@ -15,8 +15,8 @@ vec2 cmul(vec2 a, vec2 b) {
 
 void main(){
     int x = int(gl_GlobalInvocationID.x);
-    int size = imageSize(tmp_real).y;
-    if (x >= imageSize(tmp_real).x)
+    int size = imageSize(tmp_real).x;
+    if (x >= size)
         return;
 
     vec2 Dx[512];
@@ -59,10 +59,14 @@ void main(){
         Dx[y] /= float(size);
         Dy[y] /= float(size);
         Dz[y] /= float(size);
-        vec3 real_col = vec3(Dx[y].x, Dy[y].x, Dz[y].x);
-        vec3 img_col = vec3(Dx[y].y, Dy[y].y, Dz[y].y);
+        
+        // Apply frequency shift: multiply by (-1)^(x+y)
+        float sign = ((x + y) & 1) == 0 ? 1.0 : -1.0;
+        vec3 real_col = vec3(Dx[y].x, Dy[y].x, Dz[y].x) * sign;
+
+        real_col *= 5.0; // Scale factor for displacement
 
         imageStore(result_real, ivec2(x, y), vec4(real_col, 1.0));
-        imageStore(result_img, ivec2(x, y), vec4(img_col, 1.0));
+        // imageStore(result_img, ivec2(x, y), vec4(img_col, 1.0));
     } 
 }
