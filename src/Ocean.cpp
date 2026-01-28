@@ -26,6 +26,7 @@ namespace OM3D {
         material->set_stored_uniform(HASH("metal_rough_factor"), glm::vec2(1., 1.));
         material->set_stored_uniform(HASH("emissive_factor"), glm::vec3(1., 1., 1.));
         _material = material;
+        _waves_generator = Waves();
     }
 
     void Ocean::set_iteration(const size_t iteration) {
@@ -49,6 +50,11 @@ namespace OM3D {
                 camera.position().x, y_level, camera.position().z, 1.,
             });
             obj.material().set_uniform(HASH("tesselation_level"), tesselation_level);
+        }
+        std::vector<Texture> wave_textures = _waves_generator.get_waves();
+
+        for (size_t i = 0; i < wave_textures.size() && i < 4; ++i) {
+            _material->set_texture(6 + static_cast<u32>(i), std::make_shared<Texture>(std::move(wave_textures[i])));
         }
         return _result;
     }

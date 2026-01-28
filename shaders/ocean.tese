@@ -27,7 +27,10 @@ layout(binding = 0) uniform Data {
     FrameData frame;
 };
 
-uniform mat4 model;
+layout (binding = 6)uniform sampler2D waves[4];
+
+const float m = 0.4; // foam threshold
+const float k = 2.0; // foam gain
 
 vec4 mix_4_values(vec4 a, vec4 b, vec4 c, vec4 d) {
     vec4 v1 = mix(a, b, gl_TessCoord.x);
@@ -43,6 +46,18 @@ void main() {
     out_color = mix_4_values(vec4(in_color[0], 0.), vec4(in_color[1], 0.), vec4(in_color[2], 0.), vec4(in_color[3], 0.)).xyz;
     out_tangent = mix_4_values(vec4(in_tangent[0], 0.), vec4(in_tangent[1], 0.), vec4(in_tangent[2], 0.), vec4(in_tangent[3], 0.)).xyz;
     out_bitangent = mix_4_values(vec4(in_bitangent[0], 0.), vec4(in_bitangent[1], 0.), vec4(in_bitangent[2], 0.), vec4(in_bitangent[3], 0.)).xyz;
+
+    int octave = 4 - int(clamp(length(frame.camera.position - p.xyz) / 100., 0., 3.));
+    vec3 mouvement = vec3(0.0, 0.0, 0.0);
+    float j = 0.0;
+    for (int i = 0; i < octave; i++) {
+        vec4 waves = texture(waves[i], out_uv);
+        mouvement += waves.xyz;
+        j = waves.w;
+    }
+    out_position *= mouvement;
+
+    out_color = mix(vec3(0., 0., 1.0), vec3(1.0, 1.0, 1.0), clamp(k * (m - j), 0.0, 1.0));
 
     gl_Position = frame.camera.view_proj * p;
 }
