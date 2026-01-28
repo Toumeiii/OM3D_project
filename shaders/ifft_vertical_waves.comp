@@ -64,8 +64,6 @@ void main(){
         float sign = ((x + y) & 1) == 0 ? 1.0 : -1.0;
         vec3 real_col = vec3(Dx[y].x, Dy[y].x, Dz[y].x) * sign;
 
-        real_col *= 5.0; // Scale factor for displacement
-
         imageStore(result_real, ivec2(x, y), vec4(real_col, 1.0));
         // imageStore(result_img, ivec2(x, y), vec4(img_col, 1.0));
     } 
